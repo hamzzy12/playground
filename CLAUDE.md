@@ -79,3 +79,22 @@ navigate("/home");
 - `absolute contents` 조합 사용 금지 (레이아웃 깨짐 발생)
 - 컴포넌트에서 props로 받던 `className`, `onLogout` 등은 라우터 기반으로 변경됨
 - React import 필요: `import React from "react";`
+
+## 품질 관리
+
+- **Pre-commit Hook**: husky + lint-staged로 커밋 시 자동 검사
+- **ESLint**: TypeScript 코드 린팅
+- **TypeScript**: 타입 검사 (`npm run typecheck`)
+
+## 문서화
+
+작업한 내용은 Claude 스킬로 상세하게 문서화한다.
+
+### 클로드 스킬
+- **저장 위치**: `.claude/skills/<스킬명>/SKILL.md`
+
+예시 (`/.claude/skills/docs/SKILL.md`):
+```markdown
+# 문서화 지침
+작업한 내용을 상세히 기록합니다.
+```
