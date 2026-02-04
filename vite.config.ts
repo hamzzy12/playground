@@ -14,6 +14,8 @@ export default defineConfig({
     alias: {
       // Alias @ to the src directory
       "@": path.resolve(__dirname, "./src"),
+      // Redirect figma:asset/ imports to actual assets folder
+      "figma:asset": path.resolve(__dirname, "./src/assets"),
     },
   },
 

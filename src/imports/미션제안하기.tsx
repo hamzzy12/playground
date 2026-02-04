@@ -69,39 +69,32 @@ export default function Component({ className, onClose, onCreateMission }: Compo
   return (
     <div className={className || "bg-[#6e8f3b] h-[852px] relative w-[393px]"} data-name="미션제안하기">
       <div className="absolute h-[50px] left-[16px] top-[692px] w-[359px]">
-        <div className="absolute contents inset-0">
-          <div className="absolute bg-[#0e0d0d] inset-0 rounded-[10px]" />
-          <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] inset-[24%_41.23%_22%_41.23%] leading-[1.5] not-italic text-[18px] text-center text-white">미션수락하기</p>
-        </div>
+        <div className="absolute bg-[#0e0d0d] inset-0 rounded-[10px]" />
+        <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] text-center text-white">미션수락하기</p>
       </div>
       <div className="absolute h-[772px] left-0 top-[80px] w-[393px]" data-name="image 17">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <img alt="" className="absolute h-[100.09%] left-[-1.08%] max-w-none top-[-0.04%] w-[102.42%]" src={imgImage17} />
         </div>
       </div>
-      <div className="absolute contents left-[20px] top-[453px]">
-        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] inset-[53.17%_39.44%_43.31%_5.09%] leading-[1.5] not-italic text-[20px] text-white">보상으로 받을 칭찬코인 개수</p>
-        <div className="absolute bg-[#733e14] border-4 border-[#cb721e] border-solid h-[60px] left-[20px] rounded-[8px] top-[493px] w-[353px]" />
+      <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[20px] top-[453px] leading-[1.5] not-italic text-[20px] text-white">보상으로 받을 칭찬코인 개수</p>
+      <div className="absolute left-[20px] top-[493px] w-[353px] h-[60px]">
+        <div className="absolute bg-[#733e14] border-4 border-[#cb721e] border-solid inset-0 rounded-[8px]" />
         <input
           type="number"
           value={rewardCoins}
           onChange={(e) => setRewardCoins(e.target.value)}
           placeholder="1"
-          className="absolute left-[20px] top-[493px] w-[353px] h-[60px] bg-transparent px-[20px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white placeholder:text-white outline-none"
+          className="absolute inset-0 bg-transparent px-[20px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white placeholder:text-white outline-none"
         />
       </div>
-      <div className="absolute h-[50px] left-[113px] top-[752px] w-[167px]" data-name="시작버튼">
-        <div className="absolute contents inset-0">
-          <div className="absolute inset-0 rounded-[10px]">
-            <div aria-hidden="true" className="absolute border-3 border-[#d68641] border-solid inset-[-1.5px] pointer-events-none rounded-[11.5px]" />
-          </div>
-          <p 
-            className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] inset-0 flex items-center justify-center leading-[1.5] not-italic text-[#d68641] text-[18px] cursor-pointer"
-            onClick={onClose}
-          >
-            나중에
-          </p>
+      <div className="absolute h-[50px] left-[113px] top-[752px] w-[167px] cursor-pointer" data-name="시작버튼" onClick={onClose}>
+        <div className="absolute inset-0 rounded-[10px]">
+          <div aria-hidden="true" className="absolute border-3 border-[#d68641] border-solid inset-[-1.5px] pointer-events-none rounded-[11.5px]" />
         </div>
+        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] inset-0 flex items-center justify-center leading-[1.5] not-italic text-[#d68641] text-[18px]">
+          나중에
+        </p>
       </div>
       <div className="absolute h-[50px] left-[113px] top-[692px] w-[167px]" data-name="시작버튼">
         <button 
@@ -119,50 +112,46 @@ export default function Component({ className, onClose, onCreateMission }: Compo
       <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] inset-[31.46%_65.14%_65.02%_7.38%] leading-[1.5] not-italic text-[20px] text-white">미션제안하기</p>
       
       {/* Frequency Buttons */}
-      <div className="absolute contents left-[20px] top-[193px]">
-        {/* 1회 버튼 */}
-        <div 
-          className="absolute left-[20px] top-[193px] w-[83px] h-[60px] cursor-pointer active:scale-95 transition-transform"
-          onClick={() => setSelectedFrequency('1회')}
-        >
-          <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '1회' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
-          <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '1회' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>1회</p>
-        </div>
+      {/* 1회 버튼 */}
+      <div
+        className="absolute left-[20px] top-[193px] w-[83px] h-[60px] cursor-pointer active:scale-95 transition-transform"
+        onClick={() => setSelectedFrequency('1회')}
+      >
+        <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '1회' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
+        <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '1회' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>1회</p>
       </div>
-      
-      <div className="absolute contents left-[111px] top-[193px]">
-        {/* 매일 버튼 */}
-        <div 
-          className="absolute left-[111px] top-[193px] w-[83px] h-[60px] cursor-pointer active:scale-95 transition-transform"
-          onClick={() => setSelectedFrequency('매일')}
-        >
-          <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '매일' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
-          <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '매일' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>매일</p>
-        </div>
-        
-        {/* 매주 버튼 */}
-        <div 
-          className="absolute left-[201px] top-[193px] w-[83px] h-[60px] cursor-pointer active:scale-95 transition-transform"
-          onClick={() => {
-            setSelectedFrequency('매주');
-            setIsWeekdaySelectorOpen(true);
-          }}
-        >
-          <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '매주' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
-          <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '매주' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>매주</p>
-        </div>
-        
-        {/* 매월 버튼 */}
-        <div 
-          className="absolute left-[290px] top-[193px] w-[83px] h-[60px] cursor-pointer active:scale-95 transition-transform"
-          onClick={() => {
-            setSelectedFrequency('매월');
-            setIsMonthlySelectorOpen(true);
-          }}
-        >
-          <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '매월' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
-          <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '매월' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>매월</p>
-        </div>
+
+      {/* 매일 버튼 */}
+      <div
+        className="absolute left-[111px] top-[193px] w-[83px] h-[60px] cursor-pointer active:scale-95 transition-transform"
+        onClick={() => setSelectedFrequency('매일')}
+      >
+        <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '매일' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
+        <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '매일' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>매일</p>
+      </div>
+
+      {/* 매주 버튼 */}
+      <div
+        className="absolute left-[201px] top-[193px] w-[83px] h-[60px] cursor-pointer active:scale-95 transition-transform"
+        onClick={() => {
+          setSelectedFrequency('매주');
+          setIsWeekdaySelectorOpen(true);
+        }}
+      >
+        <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '매주' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
+        <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '매주' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>매주</p>
+      </div>
+
+      {/* 매월 버튼 */}
+      <div
+        className="absolute left-[290px] top-[193px] w-[83px] h-[60px] cursor-pointer active:scale-95 transition-transform"
+        onClick={() => {
+          setSelectedFrequency('매월');
+          setIsMonthlySelectorOpen(true);
+        }}
+      >
+        <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '매월' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
+        <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '매월' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>매월</p>
       </div>
       
       {/* 제안할 미션 내용 Input */}

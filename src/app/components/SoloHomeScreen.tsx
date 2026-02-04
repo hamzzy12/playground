@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import svgPaths from "@/imports/svg-jj8o0jubhu";
 import svgPathsMenu from "@/imports/svg-suvnghhced";
 import imgImage51 from "figma:asset/25e22a55b2742b552f58579327786ada9e64aa32.png";
@@ -23,11 +24,13 @@ import imgImage74 from "figma:asset/bf6aba8970b6e0b45897fd2685ac7ef492144c8e.png
 import imgImage77 from "figma:asset/cf6022d6ba1edae48e648736e5f3c30ba3130330.png";
 import imgImage78 from "figma:asset/3c073d66f9a0c48e0d7e037390e6668aad752c1b.png";
 
-export default function SoloHomeScreen({ className, onLogout }: { className?: string; onLogout?: () => void }) {
+export default function SoloHomeScreen() {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <div className={className || "bg-white h-[846px] relative w-[393px] mx-auto overflow-hidden"} data-name="홈화면_나혼자">
+    <div className="min-h-screen w-full flex justify-center bg-gray-100">
+      <div className="bg-white h-[846px] relative w-[393px] overflow-hidden" data-name="홈화면_나혼자">
       {/* Background Layer 1: Sky */}
       <div className="absolute h-[848px] left-[-1px] top-[-2px] w-[394px]" data-name="image 51">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage51} />
@@ -169,9 +172,9 @@ export default function SoloHomeScreen({ className, onLogout }: { className?: st
               </p>
             </div>
             {/* Logout */}
-            <div 
+            <div
               className="absolute top-[96px] left-0 w-[180px] h-[38px] cursor-pointer"
-              onClick={onLogout}
+              onClick={() => navigate("/")}
             >
               <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
@@ -259,6 +262,7 @@ export default function SoloHomeScreen({ className, onLogout }: { className?: st
                 <img alt="" className="w-full h-full object-cover" src={imgImage50} />
              </div>
         </div>
+      </div>
       </div>
     </div>
   );

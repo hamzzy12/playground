@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import svgPaths from "@/imports/svg-disegqpe5s";
 import svgPathsMenu from "@/imports/svg-suvnghhced";
@@ -27,7 +28,8 @@ import imgImage77 from "figma:asset/cf6022d6ba1edae48e648736e5f3c30ba3130330.png
 import imgImage78 from "figma:asset/3c073d66f9a0c48e0d7e037390e6668aad752c1b.png";
 import imgImage93 from "figma:asset/eba2402ddf5af3fb43d9eb1bd727ab2d2a790348.png";
 
-export default function ParentHomeScreen({ className, onLogout }: { className?: string; onLogout?: () => void }) {
+export default function ParentHomeScreen() {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [isMissionCreateOpen, setIsMissionCreateOpen] = useState(false);
@@ -92,7 +94,8 @@ export default function ParentHomeScreen({ className, onLogout }: { className?: 
   };
 
   return (
-    <div className={className || "bg-white h-[846px] relative w-[393px] mx-auto"} data-name="ParentHomeScreen.tsx">
+    <div className="min-h-screen w-full flex justify-center bg-gray-100">
+      <div className="bg-white h-[846px] relative w-[393px]" data-name="ParentHomeScreen.tsx">
       {/* Background Images */}
       <div className="absolute h-[848px] left-[-1px] top-[-2px] w-[394px]" data-name="image 51">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage51} />
@@ -250,9 +253,9 @@ export default function ParentHomeScreen({ className, onLogout }: { className?: 
               </p>
             </button>
             
-            <button 
+            <button
               className="absolute top-[96px] left-0 w-[180px] h-[38px]"
-              onClick={onLogout}
+              onClick={() => navigate("/")}
             >
               <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
@@ -335,8 +338,8 @@ export default function ParentHomeScreen({ className, onLogout }: { className?: 
           animate={{ opacity: 1 }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#6E8F3B]"
         >
-          <MissionProposeModal 
-            className="w-[393px] h-[852px]" 
+          <MissionProposeModal
+            className="w-[393px] h-[852px]"
             onClose={() => setIsMissionProposeOpen(false)}
             onCreateMission={(title, description, reward, frequency) => {
               handleCreateMission(title, description, reward, frequency);
@@ -344,6 +347,7 @@ export default function ParentHomeScreen({ className, onLogout }: { className?: 
           />
         </motion.div>
       )}
+      </div>
     </div>
   );
 }

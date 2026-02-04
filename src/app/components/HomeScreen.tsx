@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import svgPaths from "@/imports/svg-pjyub6r4mi";
 import svgPathsNew from "@/imports/svg-uurowocuep";
@@ -139,7 +140,8 @@ const ShopItem = ({ title, price, iconSrc, status = 'available', statusImageSrc,
   </button>
 );
 
-export default function HomeScreen({ className, onLogout }: { className?: string; onLogout?: () => void }) {
+export default function HomeScreen() {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [isInitialRender, setIsInitialRender] = useState(true);
@@ -215,7 +217,8 @@ export default function HomeScreen({ className, onLogout }: { className?: string
   }, []);
 
   return (
-    <div className={className || "bg-white h-[852px] relative w-[393px] mx-auto overflow-hidden"} data-name="홈화면">
+    <div className="min-h-screen w-full flex justify-center bg-gray-100">
+      <div className="bg-white h-[852px] relative w-[393px] overflow-hidden" data-name="홈화면">
       {/* Layer 1: Sky Background */}
       <div className="absolute h-[854px] left-[-1px] top-[-2px] w-[394px]" data-name="image 51">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage51} />
@@ -322,9 +325,9 @@ export default function HomeScreen({ className, onLogout }: { className?: string
                 </div>
 
                 {/* Logout */}
-                <div 
+                <div
                   className="absolute top-[144px] left-0 w-[180px] h-[38px] cursor-pointer"
-                  onClick={onLogout}
+                  onClick={() => navigate("/")}
                 >
                   <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
                   <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
@@ -506,6 +509,7 @@ export default function HomeScreen({ className, onLogout }: { className?: string
         <MissionCreatedAlert onClose={() => setIsMissionCreatedAlertOpen(false)} />
       )}
 
+      </div>
     </div>
   );
 }
