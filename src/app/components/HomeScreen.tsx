@@ -121,8 +121,8 @@ interface ShopItemProps {
 }
 
 const ShopItem = ({ title, price, iconSrc, status = 'available', statusImageSrc, onClick }: ShopItemProps) => (
-  <button 
-    className="relative w-[367px] h-[87px] shrink-0 mx-auto mb-[15px] block text-left active:scale-95 transition-transform cursor-pointer"
+  <button
+    className="relative w-[367px] h-[87px] shrink-0 mb-[16px] block text-left active:scale-95 transition-transform cursor-pointer rounded-[8px] overflow-hidden"
     onClick={onClick}
   >
      <div className="absolute inset-0 top-[11px] bg-[#45270b] rounded-[8px]" />
@@ -160,6 +160,16 @@ const ShopItem = ({ title, price, iconSrc, status = 'available', statusImageSrc,
      )}
   </button>
 );
+
+// 오늘 날짜를 한국어 형식으로 포맷하는 함수
+const getTodayDateString = () => {
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const date = today.getDate();
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const day = dayNames[today.getDay()];
+  return `${month}월 ${date}일(${day}) 오늘의 미션`;
+};
 
 export default function HomeScreen() {
   const navigate = useNavigate();
@@ -378,7 +388,7 @@ export default function HomeScreen() {
             <div className="absolute top-[260px] left-[16px] w-[361px] h-[47px]">
               <div className="absolute bg-[#532807] inset-0 rounded-[8px]" />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white">
-                1월 25일(토) 오늘의 미션
+                {getTodayDateString()}
               </p>
               <div className="absolute left-[13px] top-[10px] w-[31px] h-[26px]">
                  <img alt="" className="w-full h-full" src={imgImage45} />
@@ -388,8 +398,8 @@ export default function HomeScreen() {
       </div>
 
       {/* Layer 6: Scrollable Content Area (Z-Index 10) */}
-      <motion.div 
-        className="absolute left-0 w-full overflow-y-auto z-10 pt-[10px] px-[16px] pb-[40px] bottom-[60px]"
+      <motion.div
+        className={`absolute left-0 w-full overflow-y-auto z-10 pt-[10px] pb-[40px] bottom-[60px] ${activeTab === 'mission' ? 'px-[16px]' : 'pl-[12px] pr-[14px]'}`}
         animate={{ top: activeTab === 'mission' ? 315 : 265 }}
         transition={isInitialRender ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
       >
