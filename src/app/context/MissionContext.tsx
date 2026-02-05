@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
 export interface Mission {
   id: string;
@@ -53,7 +53,7 @@ const initialMissions: Mission[] = [
 export function MissionProvider({ children }: { children: ReactNode }) {
   const [missions, setMissions] = useState<Mission[]>(initialMissions);
 
-  const addMission = (mission: Omit<Mission, 'id' | 'status' | 'bgColor' | 'barColor'>) => {
+  const addMission = useCallback((mission: Omit<Mission, 'id' | 'status' | 'bgColor' | 'barColor'>) => {
     const newMission: Mission = {
       ...mission,
       id: Date.now().toString(),
@@ -62,13 +62,13 @@ export function MissionProvider({ children }: { children: ReactNode }) {
       barColor: '#FEB700',
     };
     setMissions(prev => [newMission, ...prev]);
-  };
+  }, []);
 
-  const updateMissionStatus = (id: string, status: Mission['status']) => {
+  const updateMissionStatus = useCallback((id: string, status: Mission['status']) => {
     setMissions(prev => prev.map(m =>
       m.id === id ? { ...m, status } : m
     ));
-  };
+  }, []);
 
   return (
     <MissionContext.Provider value={{ missions, addMission, updateMissionStatus }}>
