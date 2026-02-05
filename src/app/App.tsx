@@ -5,6 +5,7 @@ import InvitationSignupScreen from "@/app/components/InvitationSignupScreen";
 import HomeScreen from "@/app/components/HomeScreen";
 import ParentHomeScreen from "@/app/components/ParentHomeScreen";
 import SoloHomeScreen from "@/app/components/SoloHomeScreen";
+import MissionProposeScreen from "@/app/components/MissionProposeScreen";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/home" element={<HomeScreen />} />
         <Route path="/parent-home" element={<ParentHomeScreen />} />
         <Route path="/solo-home" element={<SoloHomeScreen />} />
+        <Route path="/mission-propose" element={<MissionProposeScreen />} />
       </Routes>
     </BrowserRouter>
   );

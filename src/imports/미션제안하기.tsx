@@ -4,7 +4,6 @@ import imgImage14 from "figma:asset/6f18eead9b572899ad877ca3e47a89c821b19b36.png
 import imgImage63 from "figma:asset/67b776f37d98a218bd6499f227365db338cd0a13.png";
 import WeekdaySelector from "./요일선택-23-1503";
 import MonthlySelector, { WeeklySchedule } from "./요일선택-22-1312";
-import MissionCreatedAlert from "../app/components/MissionCreatedAlert";
 
 type FrequencyType = '1회' | '매일' | '매주' | '매월';
 type WeekType = '첫째주' | '둘째주' | '셋째주' | '넷째주';
@@ -13,22 +12,22 @@ type DayType = '월' | '화' | '수' | '목' | '금' | '토' | '일';
 interface ComponentProps {
   className?: string;
   onClose?: () => void;
-  onCreateMission?: (title: string, description: string, reward: number, frequency: FrequencyType) => void;
+  onCreateMission?: (title: string, description: string, reward: number, frequency: FrequencyType, dueDate?: string) => void;
 }
 
 export default function Component({ className, onClose, onCreateMission }: ComponentProps) {
   const [selectedFrequency, setSelectedFrequency] = useState<FrequencyType>('1회');
   const [missionContent, setMissionContent] = useState('');
   const [additionalContent, setAdditionalContent] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [rewardCoins, setRewardCoins] = useState('1');
   const [isWeekdaySelectorOpen, setIsWeekdaySelectorOpen] = useState(false);
   const [isMonthlySelectorOpen, setIsMonthlySelectorOpen] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  
+
   // 월선택 팝업 상태 관리 (다중 주차 + 각 주차별 요일)
   const [selectedWeeks, setSelectedWeeks] = useState<WeekType[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule>({});
-  
+
   // 매주 요일선택 상태 관리
   const [weeklySelectedDays, setWeeklySelectedDays] = useState<DayType[]>([]);
 
@@ -37,33 +36,27 @@ export default function Component({ className, onClose, onCreateMission }: Compo
       alert('미션 내용을 입력해주세요!');
       return;
     }
-    
+
     if (!rewardCoins || parseInt(rewardCoins) <= 0) {
       alert('보상 코인을 입력해주세요!');
       return;
     }
 
-    // 알림 팝업 표시
-    setShowAlert(true);
-  };
-
-  const handleConfirmAlert = () => {
-    console.log('handleConfirmAlert 호출됨');
-    
     // 미션 생성
     if (onCreateMission) {
-      console.log('onCreateMission 호출 시작');
       onCreateMission(
-        missionContent, 
-        additionalContent, 
-        parseInt(rewardCoins), 
-        selectedFrequency
+        missionContent,
+        additionalContent,
+        parseInt(rewardCoins),
+        selectedFrequency,
+        dueDate || undefined
       );
-      console.log('onCreateMission 호출 완료');
     }
-    
-    // 알림만 닫기 (모달은 부모 컴포넌트에서 닫음)
-    setShowAlert(false);
+
+    // 모달 닫기
+    if (onClose) {
+      onClose();
+    }
   };
 
   return (
@@ -77,8 +70,22 @@ export default function Component({ className, onClose, onCreateMission }: Compo
           <img alt="" className="absolute h-[100.09%] left-[-1.08%] max-w-none top-[-0.04%] w-[102.42%]" src={imgImage17} />
         </div>
       </div>
-      <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[20px] top-[453px] leading-[1.5] not-italic text-[20px] text-white">보상으로 받을 칭찬코인 개수</p>
+      {/* 목표 완료일 */}
+      <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[20px] top-[453px] leading-[1.5] not-italic text-[20px] text-white">목표 완료일</p>
       <div className="absolute left-[20px] top-[493px] w-[353px] h-[60px]">
+        <div className="absolute bg-[#733e14] border-4 border-[#cb721e] border-solid inset-0 rounded-[8px]" />
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          placeholder="날짜 입력"
+          className="absolute inset-0 bg-transparent px-[20px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white placeholder:text-[rgba(255,255,255,0.3)] outline-none [color-scheme:dark]"
+        />
+      </div>
+
+      {/* 보상으로 받을 칭찬코인 개수 */}
+      <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[20px] top-[568px] leading-[1.5] not-italic text-[20px] text-white">보상으로 받을 칭찬코인 개수</p>
+      <div className="absolute left-[20px] top-[608px] w-[353px] h-[60px]">
         <div className="absolute bg-[#733e14] border-4 border-[#cb721e] border-solid inset-0 rounded-[8px]" />
         <input
           type="number"
@@ -97,7 +104,7 @@ export default function Component({ className, onClose, onCreateMission }: Compo
         </p>
       </div>
       <div className="absolute h-[50px] left-[113px] top-[692px] w-[167px]" data-name="시작버튼">
-        <button 
+        <button
           className="absolute inset-0 cursor-pointer active:scale-95 hover:brightness-110 transition-all"
           onClick={handleCreateMission}
         >
@@ -110,7 +117,7 @@ export default function Component({ className, onClose, onCreateMission }: Compo
       </div>
       <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] inset-[17.96%_55.73%_78.52%_7.38%] leading-[1.5] not-italic text-[20px] text-white">미션완료일 정하기</p>
       <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] inset-[31.46%_65.14%_65.02%_7.38%] leading-[1.5] not-italic text-[20px] text-white">미션제안하기</p>
-      
+
       {/* Frequency Buttons */}
       {/* 1회 버튼 */}
       <div
@@ -153,7 +160,7 @@ export default function Component({ className, onClose, onCreateMission }: Compo
         <div className={`absolute inset-0 rounded-[8px] ${selectedFrequency === '매월' ? 'bg-[#ffe400]' : 'bg-[#733e14]'}`} />
         <p className={`absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] ${selectedFrequency === '매월' ? 'text-[#492607]' : 'text-[rgba(255,255,255,0.3)]'}`}>매월</p>
       </div>
-      
+
       {/* 제안할 미션 내용 Input */}
       <div className="absolute left-[20px] top-[308px] w-[353px] h-[60px]">
         <div className="absolute bg-[#733e14] border-4 border-[#cb721e] border-solid h-[60px] rounded-[8px] w-[353px]" />
@@ -165,7 +172,7 @@ export default function Component({ className, onClose, onCreateMission }: Compo
           className="absolute inset-0 bg-transparent px-[20px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white placeholder:text-[rgba(255,255,255,0.3)] outline-none"
         />
       </div>
-      
+
       {/* 추가내용(선택) Input */}
       <div className="absolute left-[20px] top-[378px] w-[353px] h-[60px]">
         <div className="absolute bg-[#733e14] border-4 border-[#cb721e] border-solid h-[60px] rounded-[8px] w-[353px]" />
@@ -177,19 +184,19 @@ export default function Component({ className, onClose, onCreateMission }: Compo
           className="absolute inset-0 bg-transparent px-[20px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white placeholder:text-[rgba(255,255,255,0.3)] outline-none"
         />
       </div>
-      
+
       <div className="absolute h-[36px] left-[112px] top-[63px] w-[169px]" data-name="image 63">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage63} />
       </div>
 
       {/* 요일선택 모달 */}
       {isWeekdaySelectorOpen && (
-        <div 
+        <div
           className="absolute inset-0 z-50"
           onClick={() => setIsWeekdaySelectorOpen(false)}
         >
           <div onClick={(e) => e.stopPropagation()}>
-            <WeekdaySelector 
+            <WeekdaySelector
               onClose={() => setIsWeekdaySelectorOpen(false)}
               selectedDays={weeklySelectedDays}
               onDaysChange={setWeeklySelectedDays}
@@ -200,12 +207,12 @@ export default function Component({ className, onClose, onCreateMission }: Compo
 
       {/* 월 선택 모달 */}
       {isMonthlySelectorOpen && (
-        <div 
+        <div
           className="absolute inset-0 z-50"
           onClick={() => setIsMonthlySelectorOpen(false)}
         >
           <div onClick={(e) => e.stopPropagation()}>
-            <MonthlySelector 
+            <MonthlySelector
               onClose={() => setIsMonthlySelectorOpen(false)}
               selectedWeeks={selectedWeeks}
               weeklySchedule={weeklySchedule}
@@ -214,11 +221,6 @@ export default function Component({ className, onClose, onCreateMission }: Compo
             />
           </div>
         </div>
-      )}
-
-      {/* 미션 생성 완료 알림 팝업 */}
-      {showAlert && (
-        <MissionCreatedAlert onConfirm={handleConfirmAlert} />
       )}
     </div>
   );

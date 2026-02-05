@@ -4,8 +4,6 @@ import { motion } from "motion/react";
 import svgPaths from "@/imports/svg-pjyub6r4mi";
 import svgPathsNew from "@/imports/svg-uurowocuep";
 import svgPathsExchange from "@/imports/svg-e1i3f271x4";
-import MissionProposeModal from "@/imports/미션제안하기";
-import MissionCreatedAlert from "./MissionCreatedAlert";
 import imgImage51 from "figma:asset/25e22a55b2742b552f58579327786ada9e64aa32.png";
 import imgImage90 from "figma:asset/33a8e1b3207d3e946a3d1319a80807089cbbc3fa.png";
 import imgImage34 from "figma:asset/1f04a42ee33275b3f150a4dc2ddde91b9839c383.png";
@@ -43,52 +41,61 @@ interface MissionCardProps {
   rewardText: string;
   iconSrc: string;
   buttonSrc: string;
+  inProgressButtonSrc: string;
   svgPath: string;
+  status?: 'active' | 'in_progress' | 'completed';
   onButtonClick?: () => void;
 }
 
-const MissionCard = ({ bgColor, barColor, shadowColor, title, subtitle, rewardText, iconSrc, buttonSrc, svgPath, onButtonClick }: MissionCardProps) => (
-  <div className="relative w-[361px] h-[146px] shrink-0 mx-auto mb-[15px]">
-    {/* Shadow */}
-    <div className="absolute inset-0 top-[6px] rounded-[8px]" style={{ backgroundColor: shadowColor }} />
-    
-    {/* Main Background */}
-    <div className="absolute inset-0 rounded-[8px]" style={{ backgroundColor: bgColor }} />
-    
-    {/* Bottom Bar */}
-    <div className="absolute left-0 bottom-0 w-[361px] h-[47px]">
-      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 361 47">
-        <path d={svgPath} fill={barColor} />
-      </svg>
-    </div>
+const MissionCard = ({ bgColor, barColor, shadowColor, title, subtitle, rewardText, iconSrc, buttonSrc, inProgressButtonSrc, svgPath, status = 'active', onButtonClick }: MissionCardProps) => {
+  const isInProgress = status === 'in_progress';
+  const displayBgColor = isInProgress ? '#f5eaf8' : bgColor;
+  const displayBarColor = isInProgress ? '#C07FE5' : barColor;
+  const displayButtonSrc = isInProgress ? inProgressButtonSrc : buttonSrc;
 
-    {/* Content */}
-    <div className="absolute inset-0">
-       <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] bottom-[11px] left-0 w-full leading-[1.5] not-italic text-[18px] text-left pl-[25px] text-[#492607] whitespace-pre-wrap">
-        {rewardText}
-      </p>
-      <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] top-[20px] left-[100px] leading-[1.5] not-italic text-[#492607] text-[20px] whitespace-pre-wrap">
-        {title}
-      </p>
-      <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] top-[48px] left-[100px] leading-[1.5] not-italic text-[#492607] text-[20px] whitespace-pre-wrap">
-        {subtitle}
-      </p>
-      
-      {/* Icon */}
-      <div className="absolute left-[25px] top-[15px] size-[66px]">
-        <img alt="icon" className="w-full h-full object-cover" src={iconSrc} />
+  return (
+    <button
+      className="relative w-[361px] h-[146px] shrink-0 mx-auto mb-[15px] cursor-pointer active:scale-95 transition-transform rounded-[16px] overflow-hidden"
+      onClick={onButtonClick}
+    >
+      {/* Shadow */}
+      <div className="absolute inset-0 top-[6px] rounded-[16px]" style={{ backgroundColor: shadowColor }} />
+
+      {/* Main Background */}
+      <div className="absolute inset-0 rounded-[16px]" style={{ backgroundColor: displayBgColor }} />
+
+      {/* Bottom Bar */}
+      <div className="absolute left-0 bottom-0 w-[361px] h-[47px]">
+        <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 361 47">
+          <path d={svgPath} fill={displayBarColor} />
+        </svg>
       </div>
 
-      {/* Action Button */}
-      <button 
-        className="absolute right-[10px] bottom-[10px] h-[56px] w-[142px] active:scale-95 transition-transform cursor-pointer"
-        onClick={onButtonClick}
-      >
-         <img alt="button" className="w-full h-full object-contain" src={buttonSrc} />
-      </button>
-    </div>
-  </div>
-);
+      {/* Content */}
+      <div className="absolute inset-0 pointer-events-none">
+         <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] bottom-[11px] left-0 w-full leading-[1.5] not-italic text-[18px] text-left pl-[25px] text-[#492607] whitespace-pre-wrap">
+          {rewardText}
+        </p>
+        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] top-[20px] left-[100px] leading-[1.5] not-italic text-[#492607] text-[20px] whitespace-pre-wrap">
+          {title}
+        </p>
+        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] top-[48px] left-[100px] leading-[1.5] not-italic text-[#492607] text-[20px] whitespace-pre-wrap">
+          {subtitle}
+        </p>
+
+        {/* Icon */}
+        <div className="absolute left-[25px] top-[15px] size-[66px]">
+          <img alt="icon" className="w-full h-full object-cover" src={iconSrc} />
+        </div>
+
+        {/* Status Button Image */}
+        <div className="absolute right-[10px] bottom-[10px] h-[56px] w-[142px]">
+           <img alt="button" className="w-full h-full object-contain" src={displayButtonSrc} />
+        </div>
+      </div>
+    </button>
+  );
+};
 
 interface ShopItemProps {
   title: string;
@@ -145,8 +152,6 @@ export default function HomeScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [isInitialRender, setIsInitialRender] = useState(true);
-  const [isMissionProposeOpen, setIsMissionProposeOpen] = useState(false);
-  const [isMissionCreatedAlertOpen, setIsMissionCreatedAlertOpen] = useState(false);
 
   // 미션 목록 상태
   interface Mission {
@@ -156,6 +161,7 @@ export default function HomeScreen() {
     reward: number;
     bgColor: string;
     barColor: string;
+    status: 'active' | 'in_progress' | 'completed';
   }
 
   const [missions, setMissions] = useState<Mission[]>([
@@ -165,51 +171,38 @@ export default function HomeScreen() {
       subtitle: 'p7~p15까지 할 수 있지?',
       reward: 1,
       bgColor: '#f2e1be',
-      barColor: '#FEB700'
+      barColor: '#FEB700',
+      status: 'active'
     },
     {
       id: '2',
       title: '태권도 학원 가기',
       subtitle: '학원 갔다오는게 어때?',
       reward: 1,
-      bgColor: '#f5eaf8',
-      barColor: '#C07FE5'
+      bgColor: '#f2e1be',
+      barColor: '#FEB700',
+      status: 'active'
     },
     {
       id: '3',
       title: '학교 숙제 하기',
       subtitle: '학교 복습 빼먹지마~',
       reward: 1,
-      bgColor: '#e8f6ed',
-      barColor: '#5EE2A0'
+      bgColor: '#f2e1be',
+      barColor: '#FEB700',
+      status: 'active'
     }
   ]);
 
-  // 미션 추가 함수
-  const handleCreateMission = (missionTitle: string, missionDescription: string, missionReward: number, frequency: string) => {
-    const colors = [
-      { bg: '#f2e1be', bar: '#FEB700' },
-      { bg: '#f5eaf8', bar: '#C07FE5' },
-      { bg: '#e8f6ed', bar: '#5EE2A0' },
-      { bg: '#fef5e7', bar: '#F39C12' },
-      { bg: '#ebf5fb', bar: '#3498DB' }
-    ];
-    
-    const colorIndex = missions.length % colors.length;
-    
-    const newMission: Mission = {
-      id: Date.now().toString(),
-      title: missionTitle || '새로운 미션',
-      subtitle: missionDescription || '',
-      reward: missionReward || 1,
-      bgColor: colors[colorIndex].bg,
-      barColor: colors[colorIndex].bar
-    };
-    
-    setMissions([newMission, ...missions]);
-    setIsMissionProposeOpen(false);
-    setIsMissionCreatedAlertOpen(true);
+  // 미진행 버튼 클릭 시 진행중으로 변경
+  const handleMissionButtonClick = (missionId: string) => {
+    setMissions(prev => prev.map(mission =>
+      mission.id === missionId && mission.status === 'active'
+        ? { ...mission, status: 'in_progress' as const }
+        : mission
+    ));
   };
+
 
   React.useEffect(() => {
     // 초기 렌더링 직후 애니메이션 활성화
@@ -295,11 +288,11 @@ export default function HomeScreen() {
               {/* Menu Items (Group 14) */}
               <div className="absolute left-[10px] top-[10px]">
                 {/* Mission Suggestion Button */}
-                <div 
+                <div
                   className="absolute top-0 left-0 w-[180px] h-[39px] cursor-pointer"
                   onClick={() => {
-                    setIsMissionProposeOpen(true);
                     setIsMenuOpen(false);
+                    navigate('/mission-propose');
                   }}
                 >
                    <div className="absolute inset-0 bg-[#feb700] border border-solid border-white rounded-[8px]" />
@@ -407,7 +400,7 @@ export default function HomeScreen() {
           /* MISSION LIST CONTENT */
           <>
             {missions.map(mission => (
-              <MissionCard 
+              <MissionCard
                 key={mission.id}
                 bgColor={mission.bgColor}
                 barColor={mission.barColor}
@@ -417,8 +410,10 @@ export default function HomeScreen() {
                 rewardText={`보상 : 칭찬코인 +${mission.reward}`}
                 iconSrc={imgImage46}
                 buttonSrc={imgImage50}
+                inProgressButtonSrc={imgImage37}
                 svgPath={svgPaths.p2cc17800}
-                onButtonClick={() => console.log(`Mission clicked: ${mission.title}`)}
+                status={mission.status}
+                onButtonClick={() => handleMissionButtonClick(mission.id)}
               />
             ))}
           </>
@@ -497,17 +492,7 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Mission Propose Modal */}
-      {isMissionProposeOpen && (
-        <div className="absolute inset-0 z-50">
-          <MissionProposeModal onClose={() => setIsMissionProposeOpen(false)} onCreateMission={handleCreateMission} />
-        </div>
-      )}
 
-      {/* Mission Created Alert */}
-      {isMissionCreatedAlertOpen && (
-        <MissionCreatedAlert onClose={() => setIsMissionCreatedAlertOpen(false)} />
-      )}
 
       </div>
     </div>

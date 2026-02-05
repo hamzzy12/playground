@@ -1,6 +1,7 @@
 import svgPaths from "@/imports/svg-disegqpe5s";
 import imgImage46 from "figma:asset/5f0f538fb1547384976c70a598ea8abfa9121d35.png";
 import imgImage47 from "figma:asset/06750638a04f2b3069b1057f814539a0302a2245.png";
+import imgImage37 from "figma:asset/409eeaf8b8d3d94dd075d0b92daaa9b7111bd5df.png";
 
 export interface Mission {
   id: string;
@@ -9,7 +10,7 @@ export interface Mission {
   reward: number;
   backgroundColor: string;
   bottomBarColor: string;
-  status?: 'active' | 'completed' | 'expired';
+  status?: 'active' | 'completed' | 'expired' | 'in_progress';
 }
 
 interface MissionCardProps {
@@ -27,7 +28,10 @@ export default function MissionCard({ mission, onClick }: MissionCardProps) {
       <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[6px] w-[361px]" />
       
       {/* Main Card Background */}
-      <div className={`absolute h-[146px] left-0 rounded-[8px] top-0 w-[361px]`} style={{ backgroundColor: mission.backgroundColor }} />
+      <div
+        className={`absolute h-[146px] left-0 rounded-[8px] top-0 w-[361px]`}
+        style={{ backgroundColor: mission.status === 'in_progress' ? '#f5eaf8' : mission.backgroundColor }}
+      />
       
       {/* Bottom Bar */}
       <div className="absolute h-[47px] left-0 top-[99px] w-[361px]">
@@ -60,6 +64,13 @@ export default function MissionCard({ mission, onClick }: MissionCardProps) {
       {mission.status === 'completed' && (
         <div className="absolute h-[56px] left-[201px] top-[80px] w-[142px]">
           <img alt="마감됨" className="w-full h-full object-contain" src={imgImage47} />
+        </div>
+      )}
+
+      {/* In Progress Stamp */}
+      {mission.status === 'in_progress' && (
+        <div className="absolute h-[56px] left-[201px] top-[80px] w-[142px]">
+          <img alt="진행중" className="w-full h-full object-contain" src={imgImage37} />
         </div>
       )}
     </button>
