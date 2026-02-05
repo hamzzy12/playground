@@ -213,13 +213,13 @@ export default function MissionProposeScreen() {
             {selectedIconSrc && (
               <div className="relative">
                 <div
-                  className="bg-[#733e14] border-4 border-[#cb721e] border-solid rounded-[8px] size-[78px] overflow-hidden cursor-pointer"
+                  className="size-[78px] cursor-pointer"
                   onClick={() => setIsIconSelectOpen(true)}
                 >
                   <img
                     src={selectedIconSrc}
                     alt="선택된 아이콘"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
                 {/* 삭제 버튼 */}
