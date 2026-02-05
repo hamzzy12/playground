@@ -6,6 +6,7 @@ import imgImage63 from "figma:asset/67b776f37d98a218bd6499f227365db338cd0a13.png
 import WeekdaySelector from "@/imports/요일선택-23-1503";
 import MonthlySelector, { WeeklySchedule } from "@/imports/요일선택-22-1312";
 import MissionCreatedAlert from "./MissionCreatedAlert";
+import { useMissions } from "@/app/context/MissionContext";
 
 type FrequencyType = '1회' | '매일' | '매주' | '매월';
 type WeekType = '첫째주' | '둘째주' | '셋째주' | '넷째주';
@@ -13,6 +14,7 @@ type DayType = '월' | '화' | '수' | '목' | '금' | '토' | '일';
 
 export default function MissionProposeScreen() {
   const navigate = useNavigate();
+  const { addMission } = useMissions();
   const [selectedFrequency, setSelectedFrequency] = useState<FrequencyType>('1회');
   const [missionContent, setMissionContent] = useState('');
   const [additionalContent, setAdditionalContent] = useState('');
@@ -40,10 +42,10 @@ export default function MissionProposeScreen() {
       return;
     }
 
-    // TODO: 미션 생성 로직 (API 호출 또는 상태 관리)
-    console.log('미션 생성:', {
+    // 미션 추가
+    addMission({
       title: missionContent,
-      description: additionalContent,
+      subtitle: additionalContent || '미션을 완료해보세요!',
       reward: parseInt(rewardCoins),
       frequency: selectedFrequency,
       dueDate: dueDate || undefined

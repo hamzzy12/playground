@@ -6,19 +6,24 @@ import HomeScreen from "@/app/components/HomeScreen";
 import ParentHomeScreen from "@/app/components/ParentHomeScreen";
 import SoloHomeScreen from "@/app/components/SoloHomeScreen";
 import MissionProposeScreen from "@/app/components/MissionProposeScreen";
+import InProgressMissionScreen from "@/app/components/InProgressMissionScreen";
+import { MissionProvider } from "@/app/context/MissionContext";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginScreen />} />
-        <Route path="/invitation" element={<InvitationScreen />} />
-        <Route path="/invitation-signup" element={<InvitationSignupScreen />} />
-        <Route path="/home" element={<HomeScreen />} />
-        <Route path="/parent-home" element={<ParentHomeScreen />} />
-        <Route path="/solo-home" element={<SoloHomeScreen />} />
-        <Route path="/mission-propose" element={<MissionProposeScreen />} />
-      </Routes>
+      <MissionProvider>
+        <Routes>
+          <Route path="/" element={<LoginScreen />} />
+          <Route path="/invitation" element={<InvitationScreen />} />
+          <Route path="/invitation-signup" element={<InvitationSignupScreen />} />
+          <Route path="/home" element={<HomeScreen />} />
+          <Route path="/parent-home" element={<ParentHomeScreen />} />
+          <Route path="/solo-home" element={<SoloHomeScreen />} />
+          <Route path="/mission-propose" element={<MissionProposeScreen />} />
+          <Route path="/mission-in-progress" element={<InProgressMissionScreen />} />
+        </Routes>
+      </MissionProvider>
     </BrowserRouter>
   );
 }

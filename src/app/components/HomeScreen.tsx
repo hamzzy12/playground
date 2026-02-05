@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
+import { useMissions } from "@/app/context/MissionContext";
 import svgPaths from "@/imports/svg-pjyub6r4mi";
 import svgPathsNew from "@/imports/svg-uurowocuep";
 import svgPathsExchange from "@/imports/svg-e1i3f271x4";
@@ -42,16 +43,29 @@ interface MissionCardProps {
   iconSrc: string;
   buttonSrc: string;
   inProgressButtonSrc: string;
+  completedButtonSrc: string;
   svgPath: string;
   status?: 'active' | 'in_progress' | 'completed';
   onButtonClick?: () => void;
 }
 
-const MissionCard = ({ bgColor, barColor, shadowColor, title, subtitle, rewardText, iconSrc, buttonSrc, inProgressButtonSrc, svgPath, status = 'active', onButtonClick }: MissionCardProps) => {
+const MissionCard = ({ bgColor, barColor, shadowColor, title, subtitle, rewardText, iconSrc, buttonSrc, inProgressButtonSrc, completedButtonSrc, svgPath, status = 'active', onButtonClick }: MissionCardProps) => {
   const isInProgress = status === 'in_progress';
-  const displayBgColor = isInProgress ? '#f5eaf8' : bgColor;
-  const displayBarColor = isInProgress ? '#C07FE5' : barColor;
-  const displayButtonSrc = isInProgress ? inProgressButtonSrc : buttonSrc;
+  const isCompleted = status === 'completed';
+
+  let displayBgColor = bgColor;
+  let displayBarColor = barColor;
+  let displayButtonSrc = buttonSrc;
+
+  if (isInProgress) {
+    displayBgColor = '#f5eaf8';
+    displayBarColor = '#C07FE5';
+    displayButtonSrc = inProgressButtonSrc;
+  } else if (isCompleted) {
+    displayBgColor = '#e8f6ed';
+    displayBarColor = '#5EE2A0';
+    displayButtonSrc = completedButtonSrc;
+  }
 
   return (
     <button
@@ -149,58 +163,42 @@ const ShopItem = ({ title, price, iconSrc, status = 'available', statusImageSrc,
 
 export default function HomeScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [isInitialRender, setIsInitialRender] = useState(true);
 
-  // 미션 목록 상태
-  interface Mission {
-    id: string;
-    title: string;
-    subtitle: string;
-    reward: number;
-    bgColor: string;
-    barColor: string;
-    status: 'active' | 'in_progress' | 'completed';
-  }
+  // Context에서 미션 상태 가져오기
+  const { missions, updateMissionStatus } = useMissions();
 
-  const [missions, setMissions] = useState<Mission[]>([
-    {
-      id: '1',
-      title: '구몬학습지 풀기',
-      subtitle: 'p7~p15까지 할 수 있지?',
-      reward: 1,
-      bgColor: '#f2e1be',
-      barColor: '#FEB700',
-      status: 'active'
-    },
-    {
-      id: '2',
-      title: '태권도 학원 가기',
-      subtitle: '학원 갔다오는게 어때?',
-      reward: 1,
-      bgColor: '#f2e1be',
-      barColor: '#FEB700',
-      status: 'active'
-    },
-    {
-      id: '3',
-      title: '학교 숙제 하기',
-      subtitle: '학교 복습 빼먹지마~',
-      reward: 1,
-      bgColor: '#f2e1be',
-      barColor: '#FEB700',
-      status: 'active'
+  // 완료된 미션 처리
+  useEffect(() => {
+    const state = location.state as { completedMissionId?: string } | null;
+    if (state?.completedMissionId) {
+      updateMissionStatus(state.completedMissionId, 'completed');
+      // state 초기화 (뒤로가기 시 중복 처리 방지)
+      window.history.replaceState({}, document.title);
     }
-  ]);
+  }, [location.state, updateMissionStatus]);
 
-  // 미진행 버튼 클릭 시 진행중으로 변경
-  const handleMissionButtonClick = (missionId: string) => {
-    setMissions(prev => prev.map(mission =>
-      mission.id === missionId && mission.status === 'active'
-        ? { ...mission, status: 'in_progress' as const }
-        : mission
-    ));
+  // 미션 카드 클릭 핸들러
+  const handleMissionButtonClick = (mission: typeof missions[0]) => {
+    if (mission.status === 'active') {
+      // 미진행 → 진행중으로 변경
+      updateMissionStatus(mission.id, 'in_progress');
+    } else if (mission.status === 'in_progress') {
+      // 진행중 → 진행중 미션 화면으로 이동
+      navigate('/mission-in-progress', {
+        state: {
+          mission: {
+            id: mission.id,
+            title: mission.title,
+            subtitle: mission.subtitle,
+            reward: mission.reward,
+          }
+        }
+      });
+    }
   };
 
 
@@ -277,7 +275,7 @@ export default function HomeScreen() {
           {isMenuOpen && (
             <div className="absolute left-[173px] top-[77px] z-50 pointer-events-auto">
               {/* Background Panel (Group 13) */}
-              <div className="absolute top-0 left-0 w-[200px] h-[202px]">
+              <div className="absolute top-0 left-0 w-[200px] h-[202px] pointer-events-none">
                 <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 200 202">
                   <g>
                     <path d={svgPathsMenu.p29ac7700} fill="#311D0C" />
@@ -286,7 +284,7 @@ export default function HomeScreen() {
               </div>
 
               {/* Menu Items (Group 14) */}
-              <div className="absolute left-[10px] top-[10px]">
+              <div className="absolute left-[10px] top-[10px] z-10">
                 {/* Mission Suggestion Button */}
                 <div
                   className="absolute top-0 left-0 w-[180px] h-[39px] cursor-pointer"
@@ -411,9 +409,10 @@ export default function HomeScreen() {
                 iconSrc={imgImage46}
                 buttonSrc={imgImage50}
                 inProgressButtonSrc={imgImage37}
+                completedButtonSrc={imgImage38}
                 svgPath={svgPaths.p2cc17800}
                 status={mission.status}
-                onButtonClick={() => handleMissionButtonClick(mission.id)}
+                onButtonClick={() => handleMissionButtonClick(mission)}
               />
             ))}
           </>
