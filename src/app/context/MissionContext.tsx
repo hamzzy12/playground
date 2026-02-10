@@ -1,5 +1,16 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 
+export type MissionStatus = 'active' | 'in_progress' | 'gave_up' | 'challenge_success' | 'completed';
+
+// 미션 상태별 정렬 우선순위 (낮을수록 위에 표시)
+export const MISSION_STATUS_PRIORITY: Record<MissionStatus, number> = {
+  'active': 1,           // 미진행
+  'in_progress': 2,      // 진행중
+  'gave_up': 3,          // 포기
+  'challenge_success': 4, // 도전성공
+  'completed': 5,        // 미션완료
+};
+
 export interface Mission {
   id: string;
   title: string;
@@ -7,7 +18,7 @@ export interface Mission {
   reward: number;
   bgColor: string;
   barColor: string;
-  status: 'active' | 'in_progress' | 'completed';
+  status: MissionStatus;
   frequency?: '1회' | '매일' | '매주' | '매월';
   dueDate?: string;
 }

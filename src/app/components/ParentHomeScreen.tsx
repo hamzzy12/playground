@@ -4,10 +4,16 @@ import { motion } from "motion/react";
 import svgPaths from "@/imports/svg-disegqpe5s";
 import svgPathsMenu from "@/imports/svg-suvnghhced";
 import svgPathsShop from "@/imports/svg-lp98h8m8qs";
-import MissionCreateModal from "@/imports/상품올리기";
-import MissionProposeModal from "@/imports/미션제안하기";
-import AlertPopup from "@/imports/알림팝업-22-865";
+import MissionCreateModal from "@/imports/MissionCreateModal";
+import MissionProposeModal from "@/imports/MissionProposeModal";
+import AlertPopup from "@/imports/AlertPopup";
 import MissionCard, { Mission } from "./MissionCard";
+import DeveloperInfoPopup from "./DeveloperInfoPopup";
+import ProductCreatePopup from "./ProductCreatePopup";
+import ProductEditPopup from "./ProductEditPopup";
+import ProductRefillPopup from "./ProductRefillPopup";
+import ProductRewardPopup from "./ProductRewardPopup";
+import MissionEditPopup from "./MissionEditPopup";
 import imgImage51 from "figma:asset/25e22a55b2742b552f58579327786ada9e64aa32.png";
 import imgImage92 from "figma:asset/40787136f6fb551d30f83647db8d86726e3ea97e.png";
 import imgImage52 from "figma:asset/c368e03333cec45fed8236b2ca94b1f8e78c82d4.png";
@@ -27,14 +33,54 @@ import imgImage74 from "figma:asset/bf6aba8970b6e0b45897fd2685ac7ef492144c8e.png
 import imgImage77 from "figma:asset/cf6022d6ba1edae48e648736e5f3c30ba3130330.png";
 import imgImage78 from "figma:asset/3c073d66f9a0c48e0d7e037390e6668aad752c1b.png";
 import imgImage93 from "figma:asset/eba2402ddf5af3fb43d9eb1bd727ab2d2a790348.png";
+import imgShopBadge from "figma:asset/dc98638283e39420c57bbd4a6696268ee91b7adf.svg";
+import imgNavTab from "figma:asset/c4338e4775c77da0d1a7c6298fbcf6dcf9b27fe8.svg";
+import imgBarYellow from "figma:asset/3d0b785a346010a999a1dd72bd6a85f46b406120.svg";
+import imgBarPurple from "figma:asset/1b86b0b73492988a03570aa79198a7343522a435.svg";
+import imgBarGreen from "figma:asset/d87a12be099e7914ee0d9d86d176b2b02be99701.svg";
+import imgMainTabMission from "figma:asset/917899768af2bdc82d70468ecf8b2eb6609ea73e.svg";
+import imgMainTabShop from "figma:asset/5e41aca0a7ea2967ff0e7ce1012d70d64a5a9d8f.svg";
+import imgCardBg from "figma:asset/1b26f984fa85514e442de5d0e874d1b8f381cdfd.svg";
+import imgCardOverlay from "figma:asset/36c759c24a8ff334d106fa44da201597f8ea241b.svg";
+import imgVector33 from "figma:asset/8bbc46cfe39b6598c0850fb42ba5033d3d519f0a.svg";
+import imgEditBtn from "figma:asset/799e50dfe7b7023b5b89d5b87d6f541e8e517937.png";
+import imgToggleOn from "figma:asset/53f85dfeb2f6b438582311a06991c630d2551111.svg";
+import imgToggleOff from "figma:asset/4c3c0360ff1b8b3b2e4a23e9fd5542b76ca16eab.svg";
+import imgCheerInput from "figma:asset/9012c968cdceedd9c681ae5f0166c2741293028d.svg";
+import imgCheerCardBg from "figma:asset/c3f5fe2546bc6c4b9e38f46ce9daabe49907b3ee.svg";
+import imgCheerCardShadow from "figma:asset/3e12aad1589bea607277e5580ba3864852198247.svg";
 
 export default function ParentHomeScreen() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDeveloperPopup, setShowDeveloperPopup] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
+  const [showProductCreatePopup, setShowProductCreatePopup] = useState(false);
   const [isMissionCreateOpen, setIsMissionCreateOpen] = useState(false);
   const [isMissionProposeOpen, setIsMissionProposeOpen] = useState(false);
-  
+  const [editingProduct, setEditingProduct] = useState<ShopProduct | null>(null);
+  const [refillingProductId, setRefillingProductId] = useState<string | null>(null);
+  const [rewardingProductId, setRewardingProductId] = useState<string | null>(null);
+  const [editingMission, setEditingMission] = useState<Mission | null>(null);
+  const [subTab, setSubTab] = useState<'list' | 'manage' | 'cheer'>('list');
+  const [missionEnabled, setMissionEnabled] = useState<Record<string, boolean>>({ '1': true, '2': false, '3': true });
+  const [cheerMessage, setCheerMessage] = useState('');
+  const [cheerHistory, setCheerHistory] = useState<string[]>(['오늘도 열심히 잘 했어!', '지금처럼 쭉 가자~~']);
+
+  // 소원상점 상품 목록
+  interface ShopProduct {
+    id: string;
+    name: string;
+    price: number;
+    iconSrc: string | null;
+    status: 'available' | 'soldout' | 'shipping' | 'delivered';
+  }
+  const [shopProducts, setShopProducts] = useState<ShopProduct[]>([
+    { id: '1', name: '유튜브시청20분', price: 1, iconSrc: null, status: 'available' },
+    { id: '2', name: '유튜브시청20분', price: 1, iconSrc: null, status: 'soldout' },
+    { id: '3', name: '유튜브시청20분', price: 1, iconSrc: null, status: 'delivered' },
+  ]);
+
   // 미션 목록 상태
   const initialMissions: Mission[] = [
     {
@@ -95,7 +141,7 @@ export default function ParentHomeScreen() {
 
   return (
     <div className="min-h-screen w-full flex justify-center bg-gray-100">
-      <div className="bg-white h-[846px] relative w-[393px]" data-name="ParentHomeScreen.tsx">
+      <div className="bg-white h-[852px] relative w-[393px] overflow-hidden" data-name="ParentHomeScreen.tsx">
       {/* Background Images */}
       <div className="absolute h-[848px] left-[-1px] top-[-2px] w-[394px]" data-name="image 51">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage51} />
@@ -107,105 +153,284 @@ export default function ParentHomeScreen() {
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage52} />
       </div>
 
-      {/* Mission Cards - Static positioned as in Figma */}
-      {activeTab === 'mission' && (
+      {/* Mission Cards - 미션 목록 (스크롤) */}
+      {activeTab === 'mission' && subTab === 'list' && (
+        <div className="absolute left-0 top-[319px] w-[393px] h-[464px] overflow-y-auto">
+          <div className="relative w-full" style={{ height: `${missions.length * 162 + 10}px` }}>
+            {/* Mission Card 1 */}
+            <div className="absolute left-[16px] top-0">
+              <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[6px] w-[361px]" />
+              <div className="absolute bg-[#f2e1be] h-[146px] left-0 rounded-[8px] top-0 w-[361px]" />
+              <div className="absolute h-[47px] left-0 top-[99px] w-[361px]">
+                <img alt="" className="block w-full h-full" src={imgBarYellow} />
+              </div>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-0 top-[104px] w-[361px] text-left leading-[1.5] not-italic text-[#492607] text-[18px] whitespace-nowrap pl-[16px]">보상 : 칭찬코인 +1</p>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[17px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">구몬학습지 풀기</p>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[51px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">p7~p15까지 할 수 있지?</p>
+              <div className="absolute left-[9px] size-[66px] top-[15px]" data-name="image 46">
+                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage46} />
+              </div>
+              <div className="absolute h-[56px] left-[201px] top-[80px] w-[142px]" data-name="image 47">
+                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage47} />
+              </div>
+            </div>
+
+            {/* Mission Card 2 */}
+            <div className="absolute left-[16px] top-[160px]">
+              <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[7px] w-[361px]" />
+              <div className="absolute bg-[#f5eaf8] h-[146px] left-0 rounded-[8px] top-0 w-[361px]" />
+              <div className="absolute h-[47px] left-0 top-[99px] w-[361px]">
+                <img alt="" className="block w-full h-full" src={imgBarPurple} />
+              </div>
+              <div className="absolute h-[56px] left-[201px] top-[80px] w-[142px]" data-name="image 37">
+                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage37} />
+              </div>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-0 top-[104px] w-[361px] text-left leading-[1.5] not-italic text-[#492607] text-[18px] whitespace-nowrap pl-[16px]">보상 : 칭찬코인 +1</p>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[17px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">태권도 학원 가기</p>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[51px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">학원 갔다오는게 어때?</p>
+              <div className="absolute left-[9px] size-[66px] top-[15px]" data-name="image 46">
+                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage46} />
+              </div>
+            </div>
+
+            {/* Mission Card 3 */}
+            <div className="absolute left-[16px] top-[322px]">
+              <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[6px] w-[361px]" />
+              <div className="absolute bg-[#e8f6ed] h-[146px] left-0 rounded-[8px] top-0 w-[361px]" />
+              <div className="absolute h-[47px] left-0 top-[99px] w-[361px]">
+                <img alt="" className="block w-full h-full" src={imgBarGreen} />
+              </div>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-0 top-[104px] w-[361px] text-left leading-[1.5] not-italic text-[#492607] text-[18px] whitespace-nowrap pl-[16px]">보상 : 칭찬코인 +1</p>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[17px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">학교 숙제 하기</p>
+              <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[51px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">학교 복습 빼먹지마~</p>
+              <div className="absolute left-[9px] size-[66px] top-[15px]" data-name="image 46">
+                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage46} />
+              </div>
+              <div className="absolute h-[56px] left-[206px] top-[80px] w-[142px]" data-name="image 38">
+                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage38} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 미션 관리 */}
+      {activeTab === 'mission' && subTab === 'manage' && (
         <>
-          {/* Mission Card 1 */}
-          <div className="absolute left-[16px] top-[319px]">
-            <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[6px] w-[361px]" />
-            <div className="absolute bg-[#f2e1be] h-[146px] left-0 rounded-[8px] top-0 w-[361px]" />
-            <div className="absolute h-[47px] left-0 top-[99px] w-[361px]">
-              <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 361 47">
-                <path d={svgPaths.p2cc17800} fill="#FEB700" />
-              </svg>
-            </div>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-0 top-[104px] w-[361px] text-left leading-[1.5] not-italic text-[#492607] text-[18px] whitespace-nowrap pl-[16px]">보상 : 칭찬코인 +1</p>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[17px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">구몬학습지 풀기</p>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[51px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">p7~p15까지 할 수 있지?</p>
-            <div className="absolute left-[9px] size-[66px] top-[15px]" data-name="image 46">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage46} />
-            </div>
-            <div className="absolute h-[56px] left-[201px] top-[80px] w-[142px]" data-name="image 47">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage47} />
-            </div>
+          {/* 미션 만들기 버튼 */}
+          <div
+            className="absolute left-[16px] top-[314px] w-[361px] h-[52px] cursor-pointer active:scale-95 transition-transform"
+            onClick={() => setIsMissionProposeOpen(true)}
+          >
+            <div className="absolute bg-[#45270b] left-0 top-[5px] w-[361px] h-[47px] rounded-[8px]" />
+            <div className="absolute bg-[#feb700] left-0 top-0 w-[361px] h-[47px] rounded-[8px]" />
+            <p className="absolute left-0 top-0 w-[361px] h-[47px] flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-[#492607]">
+              미션 만들기
+            </p>
           </div>
 
-          {/* Mission Card 2 */}
-          <div className="absolute left-[16px] top-[479px]">
-            <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[7px] w-[361px]" />
-            <div className="absolute bg-[#f5eaf8] h-[146px] left-0 rounded-[8px] top-0 w-[361px]" />
-            <div className="absolute h-[47px] left-0 top-[99px] w-[361px]">
-              <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 361 47">
-                <path d={svgPaths.p2cc17800} fill="#C07FE5" />
-              </svg>
-            </div>
-            <div className="absolute h-[56px] left-[201px] top-[80px] w-[142px]" data-name="image 37">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage37} />
-            </div>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-0 top-[104px] w-[361px] text-left leading-[1.5] not-italic text-[#492607] text-[18px] whitespace-nowrap pl-[16px]">보상 : 칭찬코인 +1</p>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[17px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">태권도 학원 가기</p>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[51px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">학원 갔다오는게 어때?</p>
-            <div className="absolute left-[9px] size-[66px] top-[15px]" data-name="image 46">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage46} />
-            </div>
-          </div>
+          {/* 미션 관리 카드 목록 (스크롤) */}
+          <div className="absolute left-0 top-[370px] w-[393px] h-[413px] overflow-y-auto">
+            <div className="relative w-full" style={{ height: `${missions.length * 162 + 10}px` }}>
+              {missions.map((mission, index) => {
+                const enabled = missionEnabled[mission.id] ?? true;
+                return (
+                  <div
+                    key={mission.id}
+                    className="absolute left-[16px] cursor-pointer active:scale-[0.98] transition-transform"
+                    style={{ top: `${6 + index * 162}px` }}
+                    onClick={() => setEditingMission(mission)}
+                  >
+                    <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[6px] w-[361px]" />
+                    <div className="absolute bg-[#f2e1be] h-[146px] left-0 rounded-[8px] top-0 w-[361px]" />
+                    <div className="absolute h-[47px] left-0 top-[99px] w-[361px]">
+                      <img alt="" className="block w-full h-full" src={imgBarYellow} />
+                      <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-0 top-[5px] w-[361px] text-left leading-[1.5] not-italic text-[#492607] text-[18px] whitespace-nowrap pl-[16px] pointer-events-none">
+                        보상 : 칭찬코인 +{mission.reward}
+                      </p>
+                    </div>
+                    <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[17px] w-[200px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">
+                      {mission.title}
+                    </p>
+                    <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[51px] w-[200px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">
+                      {mission.description}
+                    </p>
+                    <div className="absolute left-[9px] size-[66px] top-[15px]">
+                      <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage46} />
+                    </div>
 
-          {/* Mission Card 3 */}
-          <div className="absolute left-[16px] top-[641px]">
-            <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[6px] w-[361px]" />
-            <div className="absolute bg-[#e8f6ed] h-[146px] left-0 rounded-[8px] top-0 w-[361px]" />
-            <div className="absolute h-[47px] left-0 top-[99px] w-[361px]">
-              <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 361 47">
-                <path d={svgPaths.p2cc17800} fill="#5EE2A0" />
-              </svg>
-            </div>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-0 top-[104px] w-[361px] text-left leading-[1.5] not-italic text-[#492607] text-[18px] whitespace-nowrap pl-[16px]">보상 : 칭찬코인 +1</p>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[17px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">학교 숙제 하기</p>
-            <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[84px] top-[51px] w-[260px] leading-[1.5] not-italic text-[#492607] text-[20px] text-left whitespace-nowrap">학교 복습 빼먹지마~</p>
-            <div className="absolute left-[9px] size-[66px] top-[15px]" data-name="image 46">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage46} />
-            </div>
-            <div className="absolute h-[56px] left-[206px] top-[80px] w-[142px]" data-name="image 38">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage38} />
+                    {/* 토글 스위치 */}
+                    <button
+                      className="absolute left-[288px] top-[108px] w-[58px] h-[30px] cursor-pointer z-10"
+                      onClick={(e) => { e.stopPropagation(); setMissionEnabled({ ...missionEnabled, [mission.id]: !enabled }); }}
+                    >
+                      <img alt="" className="block w-full h-full" src={enabled ? imgToggleOn : imgToggleOff} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </>
       )}
 
-      {/* Tab Buttons */}
-      <div className="absolute left-[16px] top-[215px]">
-        <div className="absolute bg-[#4c2b0f] h-[37px] left-0 rounded-[8px] top-0 w-[361px]">
-          <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_4px_0px_0px_rgba(0,0,0,0.25)]" />
-        </div>
-        
-        {/* Active Tab Background */}
-        <motion.div 
-          className="absolute h-[37.699px] top-0 w-[180.453px]"
-          animate={{ left: activeTab === 'mission' ? 0 : 180.547 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          data-name="image 41"
-        >
-          <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage41} />
-        </motion.div>
-        
-        {/* Tab Text - Mission */}
-        <button
-          className="absolute h-[24.029px] left-[51px] top-[7px] w-[77.482px] cursor-pointer z-10"
-          onClick={() => setActiveTab('mission')}
-          data-name="image 43"
-        >
-          <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage43} />
-        </button>
-        
-        {/* Tab Text - Shop */}
-        <button
-          className="absolute h-[23.892px] left-[237.59px] top-[7px] w-[73.93px] cursor-pointer z-10"
-          onClick={() => setActiveTab('shop')}
-          data-name="image 44"
-        >
-          <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage44} />
-        </button>
+      {/* 응원하기 */}
+      {activeTab === 'mission' && subTab === 'cheer' && (
+        <>
+          {/* 응원 메세지 보내기 */}
+          <p className="absolute left-[16px] top-[319px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[20px] text-white">
+            응원 메세지 보내기
+          </p>
+          <div className="absolute left-[16px] top-[359px] w-[362px] h-[60px]">
+            <img alt="" className="block w-full h-full" src={imgCheerInput} />
+            <input
+              type="text"
+              value={cheerMessage}
+              onChange={(e) => setCheerMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.nativeEvent.isComposing && cheerMessage.trim()) {
+                  setCheerHistory([cheerMessage.trim(), ...cheerHistory]);
+                  setCheerMessage('');
+                }
+              }}
+              placeholder="오늘의 응원 한마디"
+              className="absolute inset-0 bg-transparent px-[25px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white placeholder-white/30 focus:outline-none"
+            />
+          </div>
+
+          {/* 최근에 보낸 메시지 */}
+          <p className="absolute left-[16px] top-[434px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[20px] text-white">
+            최근에 보낸 메시지
+          </p>
+
+          {/* 메시지 목록 (스크롤) */}
+          <div className="absolute left-0 top-[470px] w-[393px] h-[313px] overflow-y-auto">
+            <div className="relative w-full" style={{ height: `${cheerHistory.length * 79 + 10}px` }}>
+              {cheerHistory.map((msg, index) => (
+                <div key={index} className="absolute left-[16px]" style={{ top: `${4 + index * 79}px` }}>
+                  <div className="absolute left-0 top-[5px] w-[362px] h-[64px]">
+                    <img alt="" className="block w-full h-full" src={imgCheerCardShadow} />
+                  </div>
+                  <div className="absolute left-0 top-0 w-[362px] h-[64px]">
+                    <img alt="" className="block w-full h-full" src={imgCheerCardBg} />
+                  </div>
+                  <p className="absolute left-0 top-0 w-[362px] h-[64px] flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[20px] text-[#492607] text-center">
+                    {msg}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Main Tab (미션 / 소원 상점) */}
+      <div className="absolute left-0 top-[195px] w-[394px] h-[57px]">
+        <img alt="" className="block w-full h-full" src={activeTab === 'mission' ? imgMainTabMission : imgMainTabShop} />
       </div>
+      <button
+        className="absolute left-[98.5px] -translate-x-1/2 top-[212px] cursor-pointer z-10"
+        onClick={() => setActiveTab('mission')}
+      >
+        <p
+          className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[22px] text-center ${activeTab === 'mission' ? 'text-white' : 'text-white/30'}`}
+          style={{
+            textShadow: `
+              -3px -3px 0 #45270B, 3px -3px 0 #45270B, -3px 3px 0 #45270B, 3px 3px 0 #45270B,
+              0 -3px 0 #45270B, 0 3px 0 #45270B, -3px 0 0 #45270B, 3px 0 0 #45270B,
+              -2px -3px 0 #45270B, 2px -3px 0 #45270B, -2px 3px 0 #45270B, 2px 3px 0 #45270B,
+              -3px -2px 0 #45270B, 3px -2px 0 #45270B, -3px 2px 0 #45270B, 3px 2px 0 #45270B
+            `
+          }}
+        >
+          미션
+        </p>
+      </button>
+      <button
+        className="absolute left-[297px] -translate-x-1/2 top-[212px] cursor-pointer z-10"
+        onClick={() => setActiveTab('shop')}
+      >
+        <p
+          className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[22px] text-center whitespace-nowrap ${activeTab === 'shop' ? 'text-white' : 'text-white/30'}`}
+          style={{
+            textShadow: `
+              -3px -3px 0 #45270B, 3px -3px 0 #45270B, -3px 3px 0 #45270B, 3px 3px 0 #45270B,
+              0 -3px 0 #45270B, 0 3px 0 #45270B, -3px 0 0 #45270B, 3px 0 0 #45270B,
+              -2px -3px 0 #45270B, 2px -3px 0 #45270B, -2px 3px 0 #45270B, 2px 3px 0 #45270B,
+              -3px -2px 0 #45270B, 3px -2px 0 #45270B, -3px 2px 0 #45270B, 3px 2px 0 #45270B
+            `
+          }}
+        >
+          소원 상점
+        </p>
+      </button>
+
+      {/* Sub Tab (미션 목록 / 미션 관리 / 응원하기) */}
+      {activeTab === 'mission' && (
+        <div className="absolute left-[16px] top-[267px]">
+          <div className="absolute bg-[#4c2b0f] h-[37px] left-0 rounded-[8px] top-0 w-[361px]">
+            <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_4px_0px_0px_rgba(0,0,0,0.25)]" />
+          </div>
+          <div
+            className="absolute bg-[#b9915e] border-2 border-[#f0c58f] h-[37px] rounded-[8px] top-0 w-[120px] transition-all"
+            style={{ left: subTab === 'list' ? '0px' : subTab === 'manage' ? '120px' : '241px' }}
+          />
+          <button
+            className="absolute left-[59.5px] -translate-x-1/2 top-[5px] cursor-pointer z-10"
+            onClick={() => setSubTab('list')}
+          >
+            <p
+              className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-white text-center whitespace-nowrap ${subTab !== 'list' ? 'opacity-30' : ''}`}
+              style={{
+                textShadow: `
+                  -2px -2px 0 #45270B, 2px -2px 0 #45270B, -2px 2px 0 #45270B, 2px 2px 0 #45270B,
+                  0 -2px 0 #45270B, 0 2px 0 #45270B, -2px 0 0 #45270B, 2px 0 0 #45270B,
+                  -1px -2px 0 #45270B, 1px -2px 0 #45270B, -1px 2px 0 #45270B, 1px 2px 0 #45270B,
+                  -2px -1px 0 #45270B, 2px -1px 0 #45270B, -2px 1px 0 #45270B, 2px 1px 0 #45270B
+                `
+              }}
+            >
+              미션 목록
+            </p>
+          </button>
+          <button
+            className="absolute left-[180px] -translate-x-1/2 top-[5px] cursor-pointer z-10"
+            onClick={() => setSubTab('manage')}
+          >
+            <p
+              className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-white text-center whitespace-nowrap ${subTab !== 'manage' ? 'opacity-30' : ''}`}
+              style={{
+                textShadow: `
+                  -2px -2px 0 #45270B, 2px -2px 0 #45270B, -2px 2px 0 #45270B, 2px 2px 0 #45270B,
+                  0 -2px 0 #45270B, 0 2px 0 #45270B, -2px 0 0 #45270B, 2px 0 0 #45270B,
+                  -1px -2px 0 #45270B, 1px -2px 0 #45270B, -1px 2px 0 #45270B, 1px 2px 0 #45270B,
+                  -2px -1px 0 #45270B, 2px -1px 0 #45270B, -2px 1px 0 #45270B, 2px 1px 0 #45270B
+                `
+              }}
+            >
+              미션 관리
+            </p>
+          </button>
+          <button
+            className="absolute left-[300.5px] -translate-x-1/2 top-[5px] cursor-pointer z-10"
+            onClick={() => setSubTab('cheer')}
+          >
+            <p
+              className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-white text-center whitespace-nowrap ${subTab !== 'cheer' ? 'opacity-30' : ''}`}
+              style={{
+                textShadow: `
+                  -2px -2px 0 #45270B, 2px -2px 0 #45270B, -2px 2px 0 #45270B, 2px 2px 0 #45270B,
+                  0 -2px 0 #45270B, 0 2px 0 #45270B, -2px 0 0 #45270B, 2px 0 0 #45270B,
+                  -1px -2px 0 #45270B, 1px -2px 0 #45270B, -1px 2px 0 #45270B, 1px 2px 0 #45270B,
+                  -2px -1px 0 #45270B, 2px -1px 0 #45270B, -2px 1px 0 #45270B, 2px 1px 0 #45270B
+                `
+              }}
+            >
+              응원하기
+            </p>
+          </button>
+        </div>
+      )}
 
       {/* Star Decorations */}
       <div className="absolute left-[336px] size-[17px] top-[121px]" data-name="image 40">
@@ -215,7 +440,7 @@ export default function ParentHomeScreen() {
       {/* Header - Child Name */}
       <div className="absolute left-[16px] top-[15px]">
         <div className="absolute bg-[#291608] h-[45px] left-0 rounded-[8px] top-0 w-[124px]" />
-        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] left-[13px] top-[9px] not-italic text-[18px] text-white">아이 : 김쭈니</p>
+        <p className="absolute left-0 top-0 w-[124px] h-[45px] flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] text-white">아이 : 김쭈니</p>
       </div>
 
       {/* Hamburger Menu Button */}
@@ -239,17 +464,31 @@ export default function ParentHomeScreen() {
           </div>
 
           <div className="absolute left-[10px] top-[10px]">
-            <button className="absolute top-0 left-0 w-[180px] h-[38px]">
+            {/* 만든개발자 */}
+            <button
+              className="absolute top-0 left-0 w-[180px] h-[38px] cursor-pointer"
+              onClick={() => {
+                setIsMenuOpen(false);
+                setShowDeveloperPopup(true);
+              }}
+            >
               <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
-                미션제안하기
+                만든개발자
               </p>
             </button>
-            
-            <button className="absolute top-[48px] left-0 w-[180px] h-[38px]">
+
+            {/* 알림 */}
+            <button
+              className="absolute top-[48px] left-0 w-[180px] h-[38px] cursor-pointer"
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.open('https://cafe.naver.com/f-e/cafes/31663026/menus/1?viewType=L', '_blank');
+              }}
+            >
               <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
-                설정
+                알림
               </p>
             </button>
             
@@ -267,40 +506,112 @@ export default function ParentHomeScreen() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="absolute left-[-1px] top-[799px]">
-        <div className="absolute h-[46px] left-0 top-0 w-[134px]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 134 46">
-            <path d={svgPaths.p28dd3d40} fill="#875224" />
-          </svg>
-        </div>
-        <div className="absolute h-[26px] left-[38px] top-[12px] w-[57px]" data-name="image 47">
-          <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage48} />
-        </div>
+      <div className="absolute left-0 top-[803px] w-[393px] h-[49px] bg-[#45270B]" />
+      <div className="absolute left-0 top-[803px] w-[133px] h-[46px]">
+        <img alt="" className="block w-full h-full" src={imgNavTab} />
       </div>
-      
-      <div className="absolute h-[26px] left-[276px] top-[811px] w-[96px]" data-name="image 49">
-        <img alt="" className="absolute inset-0 max-w-none object-cover opacity-30 pointer-events-none size-full" src={imgImage49} />
-      </div>
-      
-      <div className="absolute h-[26px] left-[150px] top-[812px] w-[78px]" data-name="image 93">
-        <img alt="" className="absolute inset-0 max-w-none object-cover opacity-30 pointer-events-none size-full" src={imgImage93} />
-      </div>
+      <p className="absolute left-[68px] -translate-x-1/2 top-[814px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[21px] text-white text-center whitespace-nowrap" style={{ textShadow: '2px 0 0 #311A06, -2px 0 0 #311A06, 0 2px 0 #311A06, 0 -2px 0 #311A06, 1px 1px 0 #311A06, -1px -1px 0 #311A06, 1px -1px 0 #311A06, -1px 1px 0 #311A06, 2px 1px 0 #311A06, -2px 1px 0 #311A06, 2px -1px 0 #311A06, -2px -1px 0 #311A06, 1px 2px 0 #311A06, -1px 2px 0 #311A06, 1px -2px 0 #311A06, -1px -2px 0 #311A06' }}>
+        미션홈
+      </p>
+      <p className="absolute left-[197.5px] -translate-x-1/2 top-[814px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[21px] text-white/30 text-center whitespace-nowrap" style={{ textShadow: '2px 0 0 #311A06, -2px 0 0 #311A06, 0 2px 0 #311A06, 0 -2px 0 #311A06, 1px 1px 0 #311A06, -1px -1px 0 #311A06, 1px -1px 0 #311A06, -1px 1px 0 #311A06, 2px 1px 0 #311A06, -2px 1px 0 #311A06, 2px -1px 0 #311A06, -2px -1px 0 #311A06, 1px 2px 0 #311A06, -1px 2px 0 #311A06, 1px -2px 0 #311A06, -1px -2px 0 #311A06' }}>
+        하루일기
+      </p>
+      <p className="absolute left-[332.5px] -translate-x-1/2 top-[814px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[21px] text-white/30 text-center whitespace-nowrap" style={{ textShadow: '2px 0 0 #311A06, -2px 0 0 #311A06, 0 2px 0 #311A06, 0 -2px 0 #311A06, 1px 1px 0 #311A06, -1px -1px 0 #311A06, 1px -1px 0 #311A06, -1px 1px 0 #311A06, 2px 1px 0 #311A06, -2px 1px 0 #311A06, 2px -1px 0 #311A06, -2px -1px 0 #311A06, 1px 2px 0 #311A06, -1px 2px 0 #311A06, 1px -2px 0 #311A06, -1px -2px 0 #311A06' }}>
+        성장보고서
+      </p>
 
-      {/* Date Header + Add Button */}
-      {activeTab === 'mission' && (
-        <div className="absolute left-[16px] top-[260px]">
-          <div className="absolute bg-[#532807] h-[47px] left-0 rounded-[8px] top-0 w-[363px]" />
-          <button
-            className="absolute bg-[#feb700] h-[47px] left-[314px] rounded-[8px] top-0 w-[48px] cursor-pointer z-10"
-            onClick={() => setIsMissionProposeOpen(true)}
+
+      {/* Shop Content */}
+      {activeTab === 'shop' && (
+        <>
+          {/* 상품 올리기 버튼 */}
+          <div
+            className="absolute left-[16px] top-[270px] w-[361px] h-[52px] cursor-pointer active:scale-95 transition-transform"
+            onClick={() => setShowProductCreatePopup(true)}
           >
-            <div aria-hidden="true" className="absolute border-3 border-[#bb7232] border-solid inset-[-3px] pointer-events-none rounded-[11px]" />
-            <div className="absolute left-[10px] size-[27px] top-[10px]" data-name="image 54">
-              <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage54} />
+            <div className="absolute bg-[#45270b] left-0 top-[5px] w-[361px] h-[47px] rounded-[8px]" />
+            <div className="absolute bg-[#feb700] left-0 top-0 w-[361px] h-[47px] rounded-[8px]" />
+            <p className="absolute left-0 top-0 w-[361px] h-[47px] flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-[#492607]">
+              상품 올리기
+            </p>
+          </div>
+
+          {/* 동적 상품 목록 (스크롤) */}
+          <div className="absolute left-0 top-[326px] w-[393px] h-[457px] overflow-y-auto">
+            <div className="relative w-full" style={{ height: `${shopProducts.length * 103 + 10}px` }}>
+              {shopProducts.map((product, index) => (
+                <div
+                  key={product.id}
+                  className={`absolute left-[15px] w-[362px] ${product.status === 'available' ? 'cursor-pointer' : ''}`}
+                  style={{ top: `${6 + index * 103}px` }}
+                  onClick={() => { if (product.status === 'available') setEditingProduct(product); }}
+                >
+                  <div className="absolute bg-[#45270b] h-[82px] left-0 rounded-[8px] top-[11px] w-[361px]" />
+                  <div className="absolute left-0 top-0 w-[362px] h-[87px]">
+                    <img alt="" className="block w-full h-full" src={imgCardBg} />
+                  </div>
+                  <div className="absolute left-[282px] top-0 w-[80px] h-[87px]">
+                    <img alt="" className="block w-full h-full" src={imgShopBadge} />
+                  </div>
+                  <div className="absolute left-[10px] top-[11px] w-[66px] h-[66px]">
+                    <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={product.iconSrc || imgImage46} />
+                  </div>
+                  <p className="absolute left-[84px] top-[24px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[20px] text-[#291608]">
+                    {product.name}
+                  </p>
+                  <p className="absolute right-[14px] top-[12px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[15px] text-[#291608] text-center">
+                    칭찬코인
+                  </p>
+                  <p className="absolute right-[30px] top-[34px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[26px] text-[#291608] text-center">
+                    -{product.price}
+                  </p>
+
+                  {/* 품절 오버레이 */}
+                  {product.status === 'soldout' && (
+                    <>
+                      <div className="absolute left-0 top-0 w-[362px] h-[87px]">
+                        <img alt="" className="block w-full h-full" src={imgCardOverlay} />
+                      </div>
+                      <div
+                        className="absolute left-[100px] top-[23px] w-[161px] h-[47px] cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRefillingProductId(product.id);
+                        }}
+                      >
+                        <div className="absolute bg-[#feb700] inset-0 rounded-[8px]" />
+                        <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-[#492607]">
+                          품절상품 채우기
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 배송완료(보상주기) 오버레이 */}
+                  {product.status === 'delivered' && (
+                    <>
+                      <div className="absolute left-0 top-0 w-[362px] h-[87px]">
+                        <img alt="" className="block w-full h-full" src={imgCardOverlay} />
+                      </div>
+                      <div
+                        className="absolute left-[100px] top-[20px] w-[161px] h-[47px] cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRewardingProductId(product.id);
+                        }}
+                      >
+                        <div className="absolute bg-[#5bffc6] inset-0 rounded-[8px]" />
+                        <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-[#492607]">
+                          보상주기
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
-          </button>
-          <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[0px] top-[0px] h-[47px] w-[300px] flex items-center justify-center leading-[1.5] not-italic text-[18px] text-white">1월 25일(토) 오늘의 미션</p>
-        </div>
+          </div>
+        </>
       )}
 
       {/* Character Decorations */}
@@ -336,10 +647,10 @@ export default function ParentHomeScreen() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#6E8F3B]"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-100"
         >
           <MissionProposeModal
-            className="w-[393px] h-[852px]"
+            className="w-[393px] h-full max-h-screen overflow-y-auto bg-[#733e14]"
             onClose={() => setIsMissionProposeOpen(false)}
             onCreateMission={(title, description, reward, frequency) => {
               handleCreateMission(title, description, reward, frequency);
@@ -348,6 +659,88 @@ export default function ParentHomeScreen() {
         </motion.div>
       )}
       </div>
+
+      {/* 만든개발자 팝업 */}
+      {showDeveloperPopup && (
+        <DeveloperInfoPopup onClose={() => setShowDeveloperPopup(false)} />
+      )}
+
+      {showProductCreatePopup && (
+        <ProductCreatePopup
+          onClose={() => setShowProductCreatePopup(false)}
+          onConfirm={(productName, coinPrice, iconSrc) => {
+            const newProduct: ShopProduct = {
+              id: Date.now().toString(),
+              name: productName,
+              price: coinPrice,
+              iconSrc: iconSrc,
+              status: 'available',
+            };
+            setShopProducts([newProduct, ...shopProducts]);
+            setShowProductCreatePopup(false);
+          }}
+        />
+      )}
+
+      {rewardingProductId && (
+        <ProductRewardPopup
+          onConfirm={() => {
+            setShopProducts(shopProducts.map(p => p.id === rewardingProductId ? { ...p, status: 'soldout' } : p));
+            setRewardingProductId(null);
+          }}
+        />
+      )}
+
+      {refillingProductId && (
+        <ProductRefillPopup
+          onConfirm={() => {
+            setShopProducts(shopProducts.map(p => p.id === refillingProductId ? { ...p, status: 'available' } : p));
+            setRefillingProductId(null);
+          }}
+        />
+      )}
+
+      {editingMission && (
+        <MissionEditPopup
+          initialTitle={editingMission.title}
+          initialDescription={editingMission.description}
+          initialReward={editingMission.reward}
+          onClose={() => setEditingMission(null)}
+          onConfirm={(data) => {
+            setMissions(missions.map(m =>
+              m.id === editingMission.id
+                ? { ...m, title: data.title, description: data.description, reward: data.reward }
+                : m
+            ));
+            setEditingMission(null);
+          }}
+          onDelete={() => {
+            setMissions(missions.filter(m => m.id !== editingMission.id));
+            setEditingMission(null);
+          }}
+        />
+      )}
+
+      {editingProduct && (
+        <ProductEditPopup
+          initialName={editingProduct.name}
+          initialPrice={editingProduct.price}
+          initialIconSrc={editingProduct.iconSrc}
+          onClose={() => setEditingProduct(null)}
+          onConfirm={(productName, coinPrice, iconSrc) => {
+            setShopProducts(shopProducts.map(p =>
+              p.id === editingProduct.id
+                ? { ...p, name: productName, price: coinPrice, iconSrc: iconSrc }
+                : p
+            ));
+            setEditingProduct(null);
+          }}
+          onDelete={() => {
+            setShopProducts(shopProducts.filter(p => p.id !== editingProduct.id));
+            setEditingProduct(null);
+          }}
+        />
+      )}
     </div>
   );
 }

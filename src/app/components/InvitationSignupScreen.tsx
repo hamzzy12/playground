@@ -5,6 +5,7 @@ import imgImage14 from "figma:asset/6f18eead9b572899ad877ca3e47a89c821b19b36.png
 import imgImage19 from "figma:asset/f3138f69f4a0667feabf1394df9cea9fc0ed336e.png";
 import imgImage18 from "figma:asset/b582ab9ec41e0373445c90f23527c50a90385640.png";
 import RelationshipSelectionModal from "@/app/components/RelationshipSelectionModal";
+import SignupCompletePopup from "@/app/components/SignupCompletePopup";
 
 function RelationshipButton({ className, onClick, value }: { className?: string; onClick?: () => void; value?: string }) {
   return (
@@ -24,11 +25,12 @@ function RelationshipButton({ className, onClick, value }: { className?: string;
 export default function InvitationSignupScreen() {
   const navigate = useNavigate();
   const [showRelationshipModal, setShowRelationshipModal] = useState(false);
+  const [showSignupComplete, setShowSignupComplete] = useState(false);
   const [relationship, setRelationship] = useState("");
+  const [name, setName] = useState("");
 
   const handleSignup = () => {
-    console.log("Signup Clicked");
-    navigate("/home");
+    setShowSignupComplete(true);
   };
 
   return (
@@ -59,10 +61,16 @@ export default function InvitationSignupScreen() {
           value={relationship}
         />
 
-        {/* Name Input Placeholder */}
-        <div className="absolute h-[50px] left-[97px] top-[433px] w-[199px]" data-name="시작버튼">
+        {/* Name Input */}
+        <div className="absolute h-[50px] left-[97px] top-[433px] w-[199px]">
           <div className="absolute bg-[#7b3a00] inset-0 rounded-[10px]" />
-          <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[#c5afa5] text-[18px]">이름 입력</p>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="이름 입력"
+            className="absolute inset-0 bg-transparent rounded-[10px] px-4 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white placeholder-[#c5afa5] text-center outline-none"
+          />
         </div>
 
         <p className="absolute left-0 top-[330px] w-full text-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] text-white">미션놀이터에 오신것을 환영해요</p>
@@ -86,6 +94,12 @@ export default function InvitationSignupScreen() {
           <RelationshipSelectionModal
             onClose={() => setShowRelationshipModal(false)}
             onSelect={(val) => setRelationship(val)}
+          />
+        )}
+
+        {showSignupComplete && (
+          <SignupCompletePopup
+            onConfirm={() => navigate("/home")}
           />
         )}
       </div>

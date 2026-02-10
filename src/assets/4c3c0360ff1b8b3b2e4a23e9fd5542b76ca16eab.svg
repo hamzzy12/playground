@@ -1,0 +1,19 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 58 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 171">
+<g id="Rectangle 56" filter="url(#filter0_i_577_3212)">
+<path d="M0 10C0 6.68629 2.68629 4 6 4H52C55.3137 4 58 6.68629 58 10V21C58 24.3137 55.3137 27 52 27H6C2.68629 27 0 24.3137 0 21V10Z" fill="var(--fill-0, #B4B3B3)"/>
+</g>
+<rect id="Rectangle 57" x="1" y="1" width="28" height="28" rx="5" fill="var(--fill-0, #E5E5E5)" stroke="var(--stroke-0, #919191)" stroke-width="2"/>
+</g>
+<defs>
+<filter id="filter0_i_577_3212" x="0" y="4" width="58" height="23" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="4" dy="4"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_577_3212"/>
+</filter>
+</defs>
+</svg>

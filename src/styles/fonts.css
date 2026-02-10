@@ -1,0 +1,8 @@
+/* ONE Mobile POP 폰트 */
+@font-face {
+  font-family: 'ONE_Mobile_POP_OTF';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

@@ -119,6 +119,11 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* 전역 폰트 설정 - @layer 밖에서 최우선 적용 */
+*, *::before, *::after, body, html, p, span, div, button, input, textarea, label, h1, h2, h3, h4, h5, h6 {
+  font-family: 'ONE_Mobile_POP_OTF', sans-serif !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

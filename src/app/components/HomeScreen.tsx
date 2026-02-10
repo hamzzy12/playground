@@ -1,17 +1,32 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
-import { useMissions } from "@/app/context/MissionContext";
+import { useMissions, MISSION_STATUS_PRIORITY, MissionStatus } from "@/app/context/MissionContext";
+import MissionCompletePopup from "./MissionCompletePopup";
+import ExchangeConfirmPopup from "./ExchangeConfirmPopup";
+import SoldOutPopup from "./SoldOutPopup";
+import ShippingPopup from "./ShippingPopup";
+import DeliveredPopup from "./DeliveredPopup";
+import DeveloperInfoPopup from "./DeveloperInfoPopup";
+import ProfileSelectModal from "./ProfileSelectModal";
+import imgRectangle31 from "figma:asset/508ac9b065db524ed603dc0378c5d78cbbf23ff5.png";
+import imgRectangle32 from "figma:asset/c64f822686c4bd0690d445a8f4dce0df3c0bba36.png";
+import imgRectangle33 from "figma:asset/5e78257806ea55fb5db8e29170f3f75d1554a882.png";
+import imgRectangle34 from "figma:asset/a5034f3978ced473b918a45d6f2940d377e84db2.png";
+
+const PROFILE_MAP: Record<string, string> = {
+  p1: imgRectangle31,
+  p2: imgRectangle33,
+  p3: imgRectangle34,
+  p4: imgRectangle32,
+};
 import svgPaths from "@/imports/svg-pjyub6r4mi";
 import svgPathsNew from "@/imports/svg-uurowocuep";
 import svgPathsExchange from "@/imports/svg-e1i3f271x4";
 import imgImage51 from "figma:asset/25e22a55b2742b552f58579327786ada9e64aa32.png";
 import imgImage90 from "figma:asset/33a8e1b3207d3e946a3d1319a80807089cbbc3fa.png";
 import imgImage34 from "figma:asset/1f04a42ee33275b3f150a4dc2ddde91b9839c383.png";
-import imgImage42 from "figma:asset/f7aea2908b31eb201e3c6ddeb0dd898aae25e2f4.png";
 import imgImage41 from "figma:asset/fff6d42b3b5957c3ef2140ea9b993bb9db708049.png";
-import imgImage43 from "figma:asset/3a35e0010c42c44aa08bc9f129ba6db496d0093c.png";
-import imgImage44 from "figma:asset/89bc45fd4f0c044adf1c161def566e19ce2bc7dc.png";
 import imgImage52 from "figma:asset/c368e03333cec45fed8236b2ca94b1f8e78c82d4.png";
 import imgImage77 from "figma:asset/cf6022d6ba1edae48e648736e5f3c30ba3130330.png";
 import imgImage47 from "figma:asset/149ffd9965dec6b119823221359b74045abf60b7.png";
@@ -43,28 +58,40 @@ interface MissionCardProps {
   iconSrc: string;
   buttonSrc: string;
   inProgressButtonSrc: string;
+  gaveUpButtonSrc: string;
+  challengeSuccessButtonSrc: string;
   completedButtonSrc: string;
   svgPath: string;
-  status?: 'active' | 'in_progress' | 'completed';
+  status?: MissionStatus;
   onButtonClick?: () => void;
 }
 
-const MissionCard = ({ bgColor, barColor, shadowColor, title, subtitle, rewardText, iconSrc, buttonSrc, inProgressButtonSrc, completedButtonSrc, svgPath, status = 'active', onButtonClick }: MissionCardProps) => {
-  const isInProgress = status === 'in_progress';
-  const isCompleted = status === 'completed';
-
+const MissionCard = ({ bgColor, barColor, shadowColor, title, subtitle, rewardText, iconSrc, buttonSrc, inProgressButtonSrc, gaveUpButtonSrc, challengeSuccessButtonSrc, completedButtonSrc, svgPath, status = 'active', onButtonClick }: MissionCardProps) => {
   let displayBgColor = bgColor;
   let displayBarColor = barColor;
   let displayButtonSrc = buttonSrc;
 
-  if (isInProgress) {
-    displayBgColor = '#f5eaf8';
-    displayBarColor = '#C07FE5';
-    displayButtonSrc = inProgressButtonSrc;
-  } else if (isCompleted) {
-    displayBgColor = '#e8f6ed';
-    displayBarColor = '#5EE2A0';
-    displayButtonSrc = completedButtonSrc;
+  switch (status) {
+    case 'in_progress':
+      displayBgColor = '#f5eaf8';
+      displayBarColor = '#C07FE5';
+      displayButtonSrc = inProgressButtonSrc;
+      break;
+    case 'gave_up':
+      displayBgColor = '#f5e8e8';
+      displayBarColor = '#E57F7F';
+      displayButtonSrc = gaveUpButtonSrc;
+      break;
+    case 'challenge_success':
+      displayBgColor = '#e8f0f6';
+      displayBarColor = '#7FC0E5';
+      displayButtonSrc = challengeSuccessButtonSrc;
+      break;
+    case 'completed':
+      displayBgColor = '#e8f6ed';
+      displayBarColor = '#5EE2A0';
+      displayButtonSrc = completedButtonSrc;
+      break;
   }
 
   return (
@@ -177,9 +204,32 @@ export default function HomeScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [isInitialRender, setIsInitialRender] = useState(true);
+  const [showCompletePopup, setShowCompletePopup] = useState(false);
+  const [completingMissionId, setCompletingMissionId] = useState<string | null>(null);
+  const [missionOrder, setMissionOrder] = useState<string[]>([]);
+  const [showExchangePopup, setShowExchangePopup] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<{ id: string; title: string; price: string } | null>(null);
+  const [shippingProducts, setShippingProducts] = useState<string[]>([]);
+  const [showSoldOutPopup, setShowSoldOutPopup] = useState(false);
+  const [showShippingPopup, setShowShippingPopup] = useState(false);
+  const [showDeliveredPopup, setShowDeliveredPopup] = useState(false);
+  const [showDeveloperPopup, setShowDeveloperPopup] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfileImg, setSelectedProfileImg] = useState<string | null>(null);
+  const [selectedBorderColor, setSelectedBorderColor] = useState<string | null>(null);
 
   // Context에서 미션 상태 가져오기
   const { missions, updateMissionStatus } = useMissions();
+
+  // 초기 로드 시에만 정렬된 순서 저장
+  useEffect(() => {
+    if (missionOrder.length === 0 && missions.length > 0) {
+      const sortedIds = [...missions]
+        .sort((a, b) => MISSION_STATUS_PRIORITY[a.status] - MISSION_STATUS_PRIORITY[b.status])
+        .map(m => m.id);
+      setMissionOrder(sortedIds);
+    }
+  }, [missions, missionOrder.length]);
 
   // 완료된 미션 처리
   useEffect(() => {
@@ -208,7 +258,24 @@ export default function HomeScreen() {
           }
         }
       });
+    } else if (mission.status === 'challenge_success') {
+      // 도전성공 → 미션완료 팝업 표시
+      setCompletingMissionId(mission.id);
+      setShowCompletePopup(true);
+    } else if (mission.status === 'completed') {
+      // 완료된 미션 클릭 → 미션완료 팝업 표시 (확인용)
+      setCompletingMissionId(null);
+      setShowCompletePopup(true);
     }
+  };
+
+  // 미션완료 팝업 확인 핸들러
+  const handleMissionCompleteConfirm = () => {
+    if (completingMissionId) {
+      updateMissionStatus(completingMissionId, 'completed');
+      setCompletingMissionId(null);
+    }
+    setShowCompletePopup(false);
   };
 
 
@@ -249,15 +316,26 @@ export default function HomeScreen() {
       {/* Layer 5: Static UI Elements (Top Header, Tabs, etc) */}
       <div className="absolute top-0 left-0 w-full h-[315px] z-20 pointer-events-none">
           {/* User Profile */}
-          <div className="absolute left-[16px] top-[11px] w-[109px] h-[45px] pointer-events-auto">
+          <div className="absolute left-[16px] top-[11px] w-[109px] h-[45px] pointer-events-auto cursor-pointer" onClick={() => setShowProfileModal(true)}>
             <div className="absolute bg-[#291608] inset-0 rounded-[8px]" />
-            <div className="absolute bg-[#007722] left-0 top-0 size-[45px] rounded-[8px]" />
-            <div className="absolute h-[35px] left-[2px] top-[8px] w-[40px]">
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <img alt="" className="absolute h-[134.55%] left-0 max-w-none top-[-0.13%] w-[112.5%]" src={imgImage90} />
+            {selectedProfileImg ? (
+              <div className="absolute left-0 top-0 size-[45px] rounded-[8px] overflow-hidden">
+                <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none rounded-[8px] size-full" src={selectedProfileImg} />
               </div>
-            </div>
-            <div className="absolute border-3 border-[#00da62] border-solid left-0 top-0 size-[45px] rounded-[8px]" />
+            ) : (
+              <>
+                <div className="absolute bg-[#007722] left-0 top-0 size-[45px] rounded-[8px]" />
+                <div className="absolute h-[35px] left-[2px] top-[8px] w-[40px]">
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <img alt="" className="absolute h-[134.55%] left-0 max-w-none top-[-0.13%] w-[112.5%]" src={imgImage90} />
+                  </div>
+                </div>
+              </>
+            )}
+            <div
+              className="absolute left-0 top-0 size-[45px] rounded-[8px]"
+              style={{ border: `3px solid ${selectedBorderColor ?? "#00da62"}` }}
+            />
             <p className="absolute right-[10px] top-[10px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white">김쭈니</p>
           </div>
 
@@ -309,19 +387,31 @@ export default function HomeScreen() {
                    </p>
                 </div>
 
-                {/* Notice */}
-                <div className="absolute top-[48px] left-0 w-[180px] h-[38px]">
+                {/* 만든개발자 */}
+                <div
+                  className="absolute top-[48px] left-0 w-[180px] h-[38px] cursor-pointer"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setShowDeveloperPopup(true);
+                  }}
+                >
                   <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
                   <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
-                    공지사항
+                    만든개발자
                   </p>
                 </div>
 
-                {/* Settings */}
-                <div className="absolute top-[96px] left-0 w-[180px] h-[38px]">
+                {/* 알림 */}
+                <div
+                  className="absolute top-[96px] left-0 w-[180px] h-[38px] cursor-pointer"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    window.open('https://cafe.naver.com/f-e/cafes/31663026/menus/1?viewType=L', '_blank');
+                  }}
+                >
                   <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
                   <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
-                    설정
+                    알림
                   </p>
                 </div>
 
@@ -346,41 +436,44 @@ export default function HomeScreen() {
           </div>
 
           {/* Date Selector Strip (Tabs Area) */}
-          <div className="absolute top-[212px] left-[12px] w-[367px] z-30 h-[38px] pointer-events-auto">
+          <div className="absolute top-[211px] left-[16px] w-[361px] z-30 h-[37px] pointer-events-auto">
              {/* Tab Background Track */}
-             <div className="absolute inset-0 w-[367px] h-[38px]">
-                <img className="w-full h-full object-cover" src={imgImage42} alt="Tab Background" />
+             <div className="absolute inset-0 bg-[#4c2b0f] rounded-[8px]">
+                <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_4px_0px_0px_rgba(0,0,0,0.25)]" />
              </div>
-             
+
              {/* Active Tab Indicator */}
-             <motion.div 
-               className="absolute top-0 left-0 w-[180px] h-[38px]"
-               animate={{ x: activeTab === 'mission' ? 0 : 187 }}
+             <motion.div
+               className="absolute top-0 left-0 w-[180px] h-[37px]"
+               animate={{ x: activeTab === 'mission' ? 0 : 181 }}
                transition={{ type: "spring", stiffness: 300, damping: 30 }}
              >
                 <img className="w-full h-full object-cover" src={imgImage41} alt="Active Tab" />
              </motion.div>
 
              {/* Click Handlers (Invisible) */}
-             <div 
-                className="absolute top-0 left-0 w-[180px] h-[38px] cursor-pointer z-10"
+             <div
+                className="absolute top-0 left-0 w-[180px] h-[37px] cursor-pointer z-10"
                 onClick={() => setActiveTab('mission')}
              />
-             <div 
-                className="absolute top-0 right-0 w-[180px] h-[38px] cursor-pointer z-10"
+             <div
+                className="absolute top-0 right-0 w-[181px] h-[37px] cursor-pointer z-10"
                 onClick={() => setActiveTab('shop')}
              />
 
              {/* Tab Texts */}
-             {/* Mission List Text */}
-             <div className="absolute left-[50px] top-[7px] w-[78px] h-[24px] pointer-events-none z-20">
-                <img src={imgImage43} className={`w-full h-full object-contain transition-opacity duration-300 ${activeTab === 'mission' ? 'opacity-100' : 'opacity-50'}`} alt="Mission List" />
-             </div>
-
-             {/* Exchange Shop Text */}
-             <div className="absolute left-[239px] top-[7px] w-[74px] h-[24px] pointer-events-none z-20">
-                <img src={imgImage44} className={`w-full h-full object-contain transition-opacity duration-300 ${activeTab === 'shop' ? 'opacity-100' : 'opacity-50'}`} alt="Exchange Shop" />
-             </div>
+             <p
+               className={`absolute left-[90.5px] top-[2px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[22px] leading-[1.5] text-center pointer-events-none z-20 transition-colors duration-300 ${activeTab === 'mission' ? 'text-white' : 'text-white/30'}`}
+               style={{ textShadow: '3px 0 0 #45270B, -3px 0 0 #45270B, 0 3px 0 #45270B, 0 -3px 0 #45270B, 2.1px 2.1px 0 #45270B, -2.1px 2.1px 0 #45270B, 2.1px -2.1px 0 #45270B, -2.1px -2.1px 0 #45270B, 3px 1px 0 #45270B, -3px 1px 0 #45270B, 3px -1px 0 #45270B, -3px -1px 0 #45270B, 1px 3px 0 #45270B, -1px 3px 0 #45270B, 1px -3px 0 #45270B, -1px -3px 0 #45270B' }}
+             >
+                미션
+             </p>
+             <p
+               className={`absolute left-[269px] top-[2px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[22px] leading-[1.5] text-center pointer-events-none z-20 transition-colors duration-300 ${activeTab === 'shop' ? 'text-white' : 'text-white/30'}`}
+               style={{ textShadow: '3px 0 0 #45270B, -3px 0 0 #45270B, 0 3px 0 #45270B, 0 -3px 0 #45270B, 2.1px 2.1px 0 #45270B, -2.1px 2.1px 0 #45270B, 2.1px -2.1px 0 #45270B, -2.1px -2.1px 0 #45270B, 3px 1px 0 #45270B, -3px 1px 0 #45270B, 3px -1px 0 #45270B, -3px -1px 0 #45270B, 1px 3px 0 #45270B, -1px 3px 0 #45270B, 1px -3px 0 #45270B, -1px -3px 0 #45270B' }}
+             >
+                소원 상점
+             </p>
           </div>
 
           {/* Today's Mission Header - ONLY show on Mission Tab */}
@@ -407,7 +500,10 @@ export default function HomeScreen() {
         {activeTab === 'mission' ? (
           /* MISSION LIST CONTENT */
           <>
-            {missions.map(mission => (
+            {missionOrder
+              .map(id => missions.find(m => m.id === id))
+              .filter((mission): mission is typeof missions[0] => mission !== undefined)
+              .map(mission => (
               <MissionCard
                 key={mission.id}
                 bgColor={mission.bgColor}
@@ -419,6 +515,8 @@ export default function HomeScreen() {
                 iconSrc={imgImage46}
                 buttonSrc={imgImage50}
                 inProgressButtonSrc={imgImage37}
+                gaveUpButtonSrc={imgGiveUp}
+                challengeSuccessButtonSrc={imgChallengeSuccess}
                 completedButtonSrc={imgImage38}
                 svgPath={svgPaths.p2cc17800}
                 status={mission.status}
@@ -429,45 +527,63 @@ export default function HomeScreen() {
         ) : (
           /* SHOP CONTENT */
           <>
-             <ShopItem 
+             <ShopItem
                 title="유튜브시청20분"
                 price="-1"
                 iconSrc={imgImage46}
-                onClick={() => console.log('Shop item clicked: Youtube')}
+                status={shippingProducts.includes('shop-1') ? 'shipping' : 'available'}
+                statusImageSrc={imgImage59}
+                onClick={() => {
+                  if (shippingProducts.includes('shop-1')) {
+                    setShowShippingPopup(true);
+                  } else {
+                    setSelectedProduct({ id: 'shop-1', title: "유튜브시청20분", price: "-1" });
+                    setShowExchangePopup(true);
+                  }
+                }}
              />
 
-             <ShopItem 
+             <ShopItem
                 title="엄마랑 1시간 놀기"
                 price="-1"
                 iconSrc={imgImage46}
-                onClick={() => console.log('Shop item clicked: Play with mom')}
+                status={shippingProducts.includes('shop-2') ? 'shipping' : 'available'}
+                statusImageSrc={imgImage59}
+                onClick={() => {
+                  if (shippingProducts.includes('shop-2')) {
+                    setShowShippingPopup(true);
+                  } else {
+                    setSelectedProduct({ id: 'shop-2', title: "엄마랑 1시간 놀기", price: "-1" });
+                    setShowExchangePopup(true);
+                  }
+                }}
              />
 
-             <ShopItem 
+             <ShopItem
                 title="엄마랑 1시간 놀기"
                 price="-1"
                 iconSrc={imgImage46}
                 status="soldout"
                 statusImageSrc={imgLabelSoldOut}
-                onClick={() => console.log('Shop item clicked: Sold out')}
+                onClick={() => setShowSoldOutPopup(true)}
              />
 
-             <ShopItem 
+             <ShopItem
                 title="엄마랑 1시간 놀기"
                 price="-1"
                 iconSrc={imgImage46}
                 status="shipping"
                 statusImageSrc={imgImage59}
-                onClick={() => console.log('Shop item clicked: Shipping')}
+                onClick={() => setShowShippingPopup(true)}
              />
 
-             <ShopItem 
+             <ShopItem
                 title="엄마랑 1시간 놀기"
                 price="-1"
                 iconSrc={imgImage46}
                 status="delivered"
                 statusImageSrc={imgImage60}
-                onClick={() => console.log('Shop item clicked: Delivered')}
+                onClick={() => setShowDeliveredPopup(true)}
              />
           </>
         )}
@@ -477,7 +593,7 @@ export default function HomeScreen() {
       <div className="absolute bottom-0 left-0 w-full h-[50px] z-30 pointer-events-none">
         <div className="absolute top-[-40px] left-0 w-full h-[90px] pointer-events-auto">
              {/* Bottom bar background svg shape */}
-             <div className="absolute bottom-[5px] left-0 w-[134px] h-[46px]">
+             <div className="absolute bottom-[5px] left-0 w-[134px] h-[46px] rounded-b-[16px] overflow-hidden">
                 <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 134 46">
                     <path d={svgPaths.p28dd3d40} fill="#875224" />
                 </svg>
@@ -490,7 +606,7 @@ export default function HomeScreen() {
              </div>
 
              {/* Ranking */}
-             <div className="absolute left-[162px] bottom-[10px] w-[60px] h-[26px] opacity-30">
+             <div className="absolute left-[162px] bottom-[10px] w-[60px] h-[26px] opacity-30 cursor-pointer" onClick={() => navigate("/ranking")}>
                 <img alt="" className="w-full h-full object-cover" src={imgImage48} />
              </div>
 
@@ -504,6 +620,66 @@ export default function HomeScreen() {
 
 
       </div>
+
+      {/* 미션완료 팝업 */}
+      {showCompletePopup && (
+        <MissionCompletePopup
+          onClose={() => setShowCompletePopup(false)}
+          onConfirm={handleMissionCompleteConfirm}
+        />
+      )}
+
+      {/* 상품 교환 확인 팝업 */}
+      {showExchangePopup && (
+        <ExchangeConfirmPopup
+          productName={selectedProduct?.title}
+          onConfirm={() => {
+            if (selectedProduct?.id) {
+              setShippingProducts(prev => [...prev, selectedProduct.id]);
+            }
+            setShowExchangePopup(false);
+            setSelectedProduct(null);
+          }}
+          onCancel={() => {
+            setShowExchangePopup(false);
+            setSelectedProduct(null);
+          }}
+        />
+      )}
+
+      {/* 품절 팝업 */}
+      {showSoldOutPopup && (
+        <SoldOutPopup onClose={() => setShowSoldOutPopup(false)} />
+      )}
+
+      {/* 배송중 팝업 */}
+      {showShippingPopup && (
+        <ShippingPopup onClose={() => setShowShippingPopup(false)} />
+      )}
+
+      {/* 배송완료 팝업 */}
+      {showDeliveredPopup && (
+        <DeliveredPopup onClose={() => setShowDeliveredPopup(false)} />
+      )}
+
+      {/* 만든개발자 팝업 */}
+      {showDeveloperPopup && (
+        <DeveloperInfoPopup onClose={() => setShowDeveloperPopup(false)} />
+      )}
+
+      {/* 프로필 선택 모달 */}
+      {showProfileModal && (
+        <ProfileSelectModal
+          onClose={() => setShowProfileModal(false)}
+          onConfirm={(profileId, borderId) => {
+            setSelectedProfileImg(PROFILE_MAP[profileId] ?? null);
+            const borderMap: Record<string, string> = {
+              b1: "#37e59a", b2: "#ffb0ef", b3: "#ffe550", b4: "#ff7878",
+            };
+            if (borderId) setSelectedBorderColor(borderMap[borderId] ?? null);
+          }}
+        />
+      )}
     </div>
   );
 }

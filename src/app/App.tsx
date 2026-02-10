@@ -7,6 +7,11 @@ import ParentHomeScreen from "@/app/components/ParentHomeScreen";
 import SoloHomeScreen from "@/app/components/SoloHomeScreen";
 import MissionProposeScreen from "@/app/components/MissionProposeScreen";
 import InProgressMissionScreen from "@/app/components/InProgressMissionScreen";
+import RankingScreen from "@/app/components/RankingScreen";
+import SoloRankingScreen from "@/app/components/SoloRankingScreen";
+import ProductRefillPopup from "@/app/components/ProductRefillPopup";
+import ProductRewardPopup from "@/app/components/ProductRewardPopup";
+import MissionEditPopup from "@/app/components/MissionEditPopup";
 import { MissionProvider } from "@/app/context/MissionContext";
 
 export default function App() {
@@ -22,6 +27,11 @@ export default function App() {
           <Route path="/solo-home" element={<SoloHomeScreen />} />
           <Route path="/mission-propose" element={<MissionProposeScreen />} />
           <Route path="/mission-in-progress" element={<InProgressMissionScreen />} />
+          <Route path="/ranking" element={<RankingScreen />} />
+          <Route path="/solo-ranking" element={<SoloRankingScreen />} />
+          <Route path="/product-refill" element={<ProductRefillPopup />} />
+          <Route path="/product-reward" element={<ProductRewardPopup />} />
+          <Route path="/mission-edit" element={<MissionEditPopup initialTitle="" initialDescription="" initialReward={1} />} />
         </Routes>
       </MissionProvider>
     </BrowserRouter>
