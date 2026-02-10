@@ -1053,3 +1053,40 @@ interface SoloMissionCompletePopupProps {
 import SoloRankingScreen from "@/app/components/SoloRankingScreen";
 <Route path="/solo-ranking" element={<SoloRankingScreen />} />
 ```
+
+---
+
+### 25. SoloHomeScreen 미션 만들기 → MissionContext 연동
+
+**경로**: `/src/app/components/SoloHomeScreen.tsx`
+
+**용도**: 미션 관리 탭에서 미션을 만들면 미션 관리 + 미션 목록 탭 모두에 반영
+
+**변경 내용**:
+
+1. **MissionProposeModal에 `onCreateMission` 콜백 연결**:
+```tsx
+<MissionProposeModal
+  onCreateMission={(title, description, reward, frequency, dueDate) => {
+    addMission({ title, subtitle: description, reward, frequency, dueDate });
+    setMissionOrder([]);  // 순서 리셋하여 새 미션 포함 재정렬
+  }}
+/>
+```
+
+2. **미션 관리 탭 동적화**: 정적 카드 2개 → `missions.map()`으로 MissionContext 데이터 표시
+   - 각 카드에 수정하기 버튼 + 토글 스위치 유지
+   - 토글 상태: `missionEnabled[mission.id]` (기본값 `true`)
+   - 카드 클릭 → `setEditingMission(mission)` → MissionEditModal 오픈
+
+3. **`useMissions()`에 `addMission` 추가**:
+```typescript
+const { missions, updateMissionStatus, addMission } = useMissions();
+```
+
+**흐름**:
+1. 미션 관리 탭 → "미션 만들기" 클릭 → MissionProposeModal 오픈
+2. 미션 내용 입력 → "미션 만들기" 버튼 클릭
+3. `onCreateMission` → `addMission()` → MissionContext에 미션 추가
+4. `setMissionOrder([])` → 미션 목록 탭에서 재정렬
+5. 미션 관리 탭 + 미션 목록 탭 모두에 새 미션 표시
