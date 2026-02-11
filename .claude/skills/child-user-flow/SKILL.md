@@ -210,14 +210,22 @@
 
 ```
 HomeScreen
-├── 메인 탭
+├── 메인 탭 (탭바: imgGroup162 SVG, 394x57)
 │   ├── 미션 (activeTab: 'mission')
-│   │   └── 미션 카드 목록 → MissionCard.tsx
-│   │       ├── active → 클릭 시 in_progress로 변경 → InProgressMissionScreen
-│   │       ├── in_progress → 클릭 시 MissionCelebrationPopup
-│   │       ├── challenge_success → 클릭 시 MissionCompletePopup → completed
-│   │       └── completed → 클릭 시 MissionCompletePopup (확인용)
-│   └── 교환 상점 (activeTab: 'shop') = 보상보관함
+│   │   ├── 서브 탭 (missionSubTab, 240x37)
+│   │   │   ├── 미션 목록 (missionSubTab: 'list') ← 기본값
+│   │   │   │   └── 미션 카드 목록 → MissionCard.tsx
+│   │   │   │       ├── active → 클릭 시 in_progress로 변경 → InProgressMissionScreen
+│   │   │   │       ├── in_progress → 클릭 시 MissionCelebrationPopup
+│   │   │   │       ├── challenge_success → 클릭 시 MissionCompletePopup → completed
+│   │   │   │       └── completed → 클릭 시 MissionCompletePopup (확인용)
+│   │   │   └── 미션 관리 (missionSubTab: 'manage')
+│   │   │       ├── 미션 만들기 버튼 → navigate('/mission-propose', {state:{from:'home-manage'}})
+│   │   │       └── 미션 카드 목록 (MissionContext 연동)
+│   │   │           ├── 수정하기 → navigate('/mission-edit')
+│   │   │           └── 토글 스위치 (missionEnabled)
+│   │   └── 오늘의 미션 헤더 (list 서브탭에서만 표시)
+│   └── 소원 상점 (activeTab: 'shop') = 보상보관함
 │       ├── available 카드 → ExchangeConfirmPopup → shipping으로 변경
 │       ├── soldout 카드 → SoldOutPopup
 │       ├── shipping 카드 → ShippingPopup
@@ -225,13 +233,13 @@ HomeScreen
 ├── 햄버거 메뉴 (4개 항목)
 │   ├── 미션제안하기 → navigate('/mission-propose')
 │   ├── 만든개발자 → DeveloperInfoPopup
-│   ├── 알림 (미구현)
+│   ├── 알림 → 네이버 카페 링크 (새 탭)
 │   └── 로그아웃 → navigate('/')
 ├── 프로필 버튼 → ProfileSelectModal
-└── 하단 네비게이션
-    ├── 미션홈 (활성)
-    ├── 랭킹전 → navigate('/ranking')
-    └── 성장보고서 (미구현)
+└── 하단 네비게이션 (텍스트 라벨 기반, imgGroup60 활성 인디케이터)
+    ├── 미션홈 (활성, text-white)
+    ├── 랭킹전 → navigate('/ranking') (text-white/30)
+    └── 성장보고서 (미구현, text-white/30)
 ```
 
 ## 주요 상태 관리
@@ -246,9 +254,11 @@ HomeScreen
 | 항목 | 아이 (HomeScreen) | 부모 (ParentHomeScreen) |
 |------|-------------------|----------------------|
 | 라우트 | `/home` | `/parent-home` |
-| 미션 탭 | 미션 카드 목록만 | 미션 목록 / 미션 관리 / 응원하기 (서브탭 3개) |
-| 교환상점 | 상품 교환(구매) | 상품 올리기/수정/품절채우기/보상주기 (관리) |
+| 미션 탭 | 미션 목록 / 미션 관리 (서브탭 2개) | 미션 목록 / 미션 관리 / 응원하기 (서브탭 3개) |
+| 교환상점 | 소원 상점 (상품 교환/구매) | 교환 상점 (상품 올리기/수정/품절채우기/보상주기) |
 | 미션 생성 | 미션 제안 (부모에게 제안) | 미션 직접 생성 (아이에게 할당) |
-| 햄버거 메뉴 | 4개 (미션제안하기 포함) | 3개 (미션제안하기 없음) |
+| 햄버거 메뉴 | 4개 (미션제안하기 포함) | 4개 (모드 변경 포함) |
 | 미션 진행 | InProgressMissionScreen에서 직접 수행 | 미션 관리 탭에서 관리/수정 |
 | 미션 완료 | MissionCelebrationPopup (축하 연출) | 응원하기 탭에서 칭찬/격려 |
+| 하단 네비 | 텍스트 라벨 (imgGroup60 활성 인디케이터) | 텍스트 라벨 (imgGroup60 활성 인디케이터) |
+| 탭바 디자인 | imgGroup162 SVG (394x57) | imgMainTabMission/Shop SVG (394x57) |

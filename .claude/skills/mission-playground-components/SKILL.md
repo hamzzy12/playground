@@ -678,11 +678,127 @@ const [cheerHistory, setCheerHistory] = useState<string[]>(['오늘도 열심히
 
 ---
 
+## HomeScreen 레이아웃 (디자인 v2)
+
+**경로**: `/src/app/components/HomeScreen.tsx`
+
+**Figma 노드**: `621:2871` ("홈화면")
+
+### 레이어 구성
+
+| 레이어 | 요소 | 위치 | 설명 |
+|--------|------|------|------|
+| 1 | Sky Background (imgImage51) | left:0, top:0, 394x854 | 하늘 배경 |
+| 2 | Character (imgImage90) | left:132, top:53, 152x159 | 캐릭터 얼굴 |
+| 2 | Star 1 (imgImage34) | left:111, top:105, 21x21 | 반짝이 |
+| 2 | Star 2 (imgImage34) | left:336, top:121, 17x17 | 반짝이 |
+| 2 | Star 3 (imgImage34) | left:353, top:88, 13x13 | 반짝이 (클리핑) |
+| 3 | Brown Frame (imgImage52) | left:0, top:0, 394x803 | 브라운 프레임 |
+| 4 | Character coins (imgImage74) | left:297, top:142, 56x53 | 캐릭터 코인 (클리핑) |
+| 4 | Coin pile (imgImage78) | left:62, top:138, 70x49 | 코인 더미 |
+| 5 | Speech Bubble (imgImage77) | left:43, top:76, 130x50 | "오늘은 몇점?" |
+| 5 | Tab Bar (imgGroup162) | left:0, top:195, 394x57 | 탭바 배경 SVG |
+| 5 | Sub-tabs | left:16, top:267, 240x37 | 미션 목록 / 미션 관리 |
+| 5 | Date Header | left:16, top:314, 361x47 | 오늘의 미션 |
+| 6 | Scrollable Content | top:370, bottom:60 | 미션 카드 / 상점 카드 |
+| 7 | Bottom Nav (imgGroup60) | left:0, bottom:3, 133x46 | 활성 탭 인디케이터 |
+
+### 탭 바 (메인 탭)
+
+- 배경: `imgGroup162` SVG (394x57)
+- 텍스트: 22px, 클릭 가능
+- 활성: `text-white`, 비활성: `text-white/30`
+- 미션 탭: left:98.5px, 소원 상점 탭: left:297px
+
+### 서브 탭 (미션 탭 전용)
+
+- 상태: `missionSubTab: 'list' | 'manage'` (기본값: `'list'`)
+- 배경: `bg-[#4c2b0f]`, 240x37, rounded-[8px], inset shadow
+- 활성 인디케이터: `bg-[#b9915e] border-2 border-[#f0c58f]`, w:120px, motion 애니메이션
+- 라벨: flex 센터링 (각 120px 영역), 18px
+- 텍스트 아웃라인: text-shadow 8방향 2px `#45270B`
+- 미션 목록: left:0, 미션 관리: left:120px
+
+### 미션 관리 서브탭 (missionSubTab: 'manage')
+
+**레이아웃 구성**:
+
+| 요소 | 크기 | 설명 |
+|------|------|------|
+| 미션 만들기 버튼 | 361x47 | 노란 버튼 (`#feb700`) + 그림자 (`#45270b`, top:+5px) |
+| 미션 카드 | 361x152 | MissionContext 데이터 기반, 카드 간격 mb-[10px] |
+
+**미션 만들기 버튼**:
+- 클릭 시: `navigate('/mission-propose', { state: { from: 'home-manage' } })`
+- MissionProposeScreen에서 "나중에" 또는 미션 생성 후 돌아올 때 `{ missionSubTab: 'manage' }` state로 관리 탭 복원
+
+**미션 카드 구조**:
+```
+- 그림자: top+6px, h:146px, bg-[#45270b], rounded-[8px]
+- 카드: h:146px, bg-[#f2e1be], rounded-[8px]
+- 하단 바: imgBarYellow SVG (h:47px, top:99px)
+- 아이콘: left:9, top:15, 66x66 (imgImage46)
+- 제목: left:84, top:17, 20px
+- 설명: left:84, top:47, 20px
+- 보상 텍스트: left:16, top:104, 18px
+- 수정하기 버튼: right:15, top:10, 80x40 (imgEditBtn) → `/mission-edit`
+- 토글 스위치: right:15, top:108, 58x30 (imgToggleOn/imgToggleOff)
+```
+
+**토글 상태**: `missionEnabled: Record<string, boolean>` (기본값 `true`)
+
+**에셋**:
+
+| 변수명 | 해시 | 용도 |
+|--------|------|------|
+| `imgBarYellow` | `3d0b785a...` | 카드 하단 바 (SVG) |
+| `imgEditBtn` | `799e50df...` | 수정하기 버튼 (PNG, 텍스트 포함) |
+| `imgToggleOn` | `53f85dfe...` | 토글 ON (SVG) |
+| `imgToggleOff` | `4c3c0360...` | 토글 OFF (SVG) |
+
+### 탭 복원 (location.state)
+
+HomeScreen은 `location.state.missionSubTab`을 감지하여 서브탭을 복원:
+```typescript
+const state = location.state as { missionSubTab?: 'list' | 'manage' } | null;
+if (state?.missionSubTab) setMissionSubTab(state.missionSubTab);
+```
+
+### 하단 네비게이션
+
+- 활성 인디케이터: `imgGroup60` SVG (133x46)
+- 텍스트 라벨 기반 (이미지 아이콘 아님)
+- 미션홈: left:68px, `text-white`
+- 랭킹전: left:197.5px, `text-white/30`, `cursor-pointer`, → `/ranking`
+- 성장보고서: left:332.5px, `text-white/30`
+- 폰트: 21px, `ONE_Mobile_POP_OTF`
+
+### 에셋 (v2에서 추가/변경)
+
+| 변수명 | 해시 | 용도 |
+|--------|------|------|
+| `imgImage74` | `bf6aba89...` | 캐릭터 코인 (PNG, 클리핑) |
+| `imgImage78` | `3c073d66...` | 코인 더미 (PNG) |
+| `imgGroup60` | `c4338e47...` | 하단 네비 활성 인디케이터 (SVG) |
+| `imgGroup162` | `91789976...` | 탭바 배경 (SVG) |
+
+### 제거된 에셋
+
+| 변수명 | 해시 | 이유 |
+|--------|------|------|
+| `imgImage33` | `0211ed9a...` | 코인 전경 이미지 (레이아웃 변경) |
+| `imgImage47` | `149ffd99...` | 하단 네비 미션홈 아이콘 (텍스트로 대체) |
+| `imgImage48` | `f62dd14c...` | 하단 네비 랭킹 아이콘 (텍스트로 대체) |
+| `imgImage49` | `f80d9265...` | 하단 네비 성장보고서 아이콘 (텍스트로 대체) |
+
+---
+
 ## HomeScreen 상태 관리
 
 ### 추가된 State
 
 ```typescript
+const [missionSubTab, setMissionSubTab] = useState<'list' | 'manage'>('list');
 const [showCompletePopup, setShowCompletePopup] = useState(false);
 const [completingMissionId, setCompletingMissionId] = useState<string | null>(null);
 const [showExchangePopup, setShowExchangePopup] = useState(false);
@@ -705,13 +821,29 @@ const [showDeveloperPopup, setShowDeveloperPopup] = useState(false);
 | 알림 | (미구현) |
 | 로그아웃 | `navigate('/')` |
 
-**ParentHomeScreen** (부모용, 3개 항목, 200x154 배경):
+**ParentHomeScreen** (부모용, 4개 항목, 200x202 배경 `imgMenuBg`):
 
 | 메뉴 항목 | 동작 |
 |----------|------|
+| 모드 변경 | `setShowModeChangePopup(true)` → ModeChangePopup 팝업 |
 | 만든개발자 | `setShowDeveloperPopup(true)` (팝업) |
-| 알림 | (미구현) |
+| 알림 | 네이버 카페 링크 (새 탭) |
 | 로그아웃 | `navigate('/')` |
+
+**SoloHomeScreen** (솔로용, 4개 항목, 200x202 배경 `imgMenuBg`):
+
+| 메뉴 항목 | 동작 |
+|----------|------|
+| 모드 변경 | `setShowModeChangePopup(true)` → ModeChangePopup 팝업 |
+| 만든개발자 | `setShowDeveloperPopup(true)` (팝업) |
+| 알림 | 네이버 카페 링크 (새 탭) |
+| 로그아웃 | `navigate('/')` |
+
+**햄버거 메뉴 버튼 스타일 (ParentHomeScreen, SoloHomeScreen 공통)**:
+- 배경: `imgMenuBg` (`70341e8811...`, SVG, 200x202, `#311D0C` 라운드 사각형)
+- 각 항목: `bg-[#b9915e] border border-[#f0c58f] rounded-[6px]`, 180x38
+- 항목 간격: flex column `gap-[10px]`
+- 텍스트: 18px, `#492607`
 
 ### 미션 정렬 로직
 
@@ -794,6 +926,7 @@ src/app/components/
 ├── DeliveredPopup.tsx          # 배송완료 팝업
 ├── SignupCompletePopup.tsx     # 가입완료 팝업
 ├── DeveloperInfoPopup.tsx     # 만든개발자 팝업
+├── ModeChangePopup.tsx        # 모드 변경 팝업 (싱글/부모 전환)
 └── ProfileSelectModal.tsx     # 프로필/테두리 선택 모달
 
 src/imports/                     # Figma에서 내보낸 컴포넌트
@@ -820,6 +953,7 @@ src/imports/                     # Figma에서 내보낸 컴포넌트
 | `/mission-in-progress` | InProgressMissionScreen | 진행중 미션 화면 |
 | `/ranking` | RankingScreen | 랭킹 화면 (HomeScreen용) |
 | `/solo-ranking` | SoloRankingScreen | 랭킹 화면 (SoloHomeScreen용) |
+| `/mode-change` | ModeChangePopup | 모드 변경 (싱글/부모 전환) |
 
 ---
 
@@ -923,7 +1057,75 @@ onConfirm={(profileId, borderId) => {
 
 ---
 
-### 22. SoloHomeScreen 미션 목록 (MissionContext 연동)
+### 22. ModeChangePopup (모드 변경)
+
+**경로**: `/src/app/components/ModeChangePopup.tsx`
+
+**라우트**: `/mode-change`
+
+**용도**: 싱글모드/부모모드 전환 팝업
+
+**Props**:
+```typescript
+interface ModeChangePopupProps {
+  onClose: () => void;
+}
+```
+
+**트리거**: ParentHomeScreen, SoloHomeScreen 햄버거 메뉴 → "모드 변경" 클릭
+
+**Figma 노드**: `618:2649` ("모드변경")
+
+**화면 구성**:
+
+| 요소 | 위치 | 설명 |
+|------|------|------|
+| 어두운 오버레이 | 전체 | `bg-black/90`, 클릭 시 닫힘 |
+| 두루마리 프레임 | 중앙, top:-1, 333x439 | `imgImage29` (배경 장식) |
+| 타이틀 배너 | 중앙, top:201, 194x65 | `imgImage14` + "모드변경" 텍스트 |
+| 싱글모드 버튼 | 중앙, top:285, 278x64 | `imgImage21` → `/solo-home` 이동 |
+| 부모모드 버튼 | 중앙, top:359, 278x64 | `imgImage21` → `/parent-home` 이동 |
+
+**에셋**:
+
+| 변수명 | 해시 | 용도 |
+|--------|------|------|
+| `imgImage29` | `cf324f71...` | 두루마리 프레임 배경 (PNG) |
+| `imgImage21` | `7fbe153e...` | 모드 선택 버튼 배경 (PNG) |
+| `imgImage14` | `6f18eead...` | 타이틀 배너 (PNG, 공용) |
+
+---
+
+### 23. ParentHomeScreen 아이 선택 드롭다운
+
+**경로**: `/src/app/components/ParentHomeScreen.tsx`
+
+**Figma 노드**: `618:2372` ("아이선택 시")
+
+**용도**: "아이 : 김쭈니" 헤더 클릭 시 자녀 선택 드롭다운 표시
+
+**상태**:
+```typescript
+const [isChildSelectOpen, setIsChildSelectOpen] = useState(false);
+const [selectedChild, setSelectedChild] = useState('김쭈니');
+const [children] = useState(['김쭈니', '김나나']);
+```
+
+**드롭다운 구성**:
+- 위치: left:15, top:66, w:125
+- 배경: `imgChildSelectBg` SVG (`245c20d6...`, 125x143, `#311D0C` 라운드 사각형)
+- 자녀 이름 목록: 클릭 시 `selectedChild` 변경 + 드롭다운 닫힘
+- "아이추가" 버튼: `bg-[rgba(255,255,255,0.2)]` + 흰색 border-2, rounded-[6px]
+
+**에셋**:
+
+| 변수명 | 해시 | 용도 |
+|--------|------|------|
+| `imgChildSelectBg` | `245c20d6...` | 드롭다운 배경 (SVG) |
+
+---
+
+### 24. SoloHomeScreen 미션 목록 (MissionContext 연동)
 
 **경로**: `/src/app/components/SoloHomeScreen.tsx`
 

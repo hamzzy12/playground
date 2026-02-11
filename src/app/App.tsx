@@ -12,6 +12,7 @@ import SoloRankingScreen from "@/app/components/SoloRankingScreen";
 import ProductRefillPopup from "@/app/components/ProductRefillPopup";
 import ProductRewardPopup from "@/app/components/ProductRewardPopup";
 import MissionEditPopup from "@/app/components/MissionEditPopup";
+import ModeChangePopup from "@/app/components/ModeChangePopup";
 import { MissionProvider } from "@/app/context/MissionContext";
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/product-refill" element={<ProductRefillPopup />} />
           <Route path="/product-reward" element={<ProductRewardPopup />} />
           <Route path="/mission-edit" element={<MissionEditPopup initialTitle="" initialDescription="" initialReward={1} />} />
+          <Route path="/mode-change" element={<div className="min-h-screen w-full flex justify-center bg-gray-100"><div className="bg-white h-[852px] relative w-[393px] overflow-hidden"><ModeChangePopup onClose={() => window.history.back()} /></div></div>} />
         </Routes>
       </MissionProvider>
     </BrowserRouter>

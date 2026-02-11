@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import imgGroup65 from "figma:asset/828dccdb78cf88858262c06ca9ea0e73aca67f21.svg";
+import imgMenuBg from "figma:asset/70341e8811fcb0d7f9739fd52adbed0b2f9efb83.svg";
 import DeveloperInfoPopup from "./DeveloperInfoPopup";
+import ModeChangePopup from "./ModeChangePopup";
 import MissionCompletePopup from "./MissionCompletePopup";
 import SoloMissionCompletePopup from "./SoloMissionCompletePopup";
 import { useMissions, MISSION_STATUS_PRIORITY, MissionStatus } from "@/app/context/MissionContext";
@@ -142,6 +144,7 @@ export default function SoloHomeScreen() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeveloperPopup, setShowDeveloperPopup] = useState(false);
+  const [showModeChangePopup, setShowModeChangePopup] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [subTab, setSubTab] = useState<'list' | 'manage' | 'cheer'>('list');
   const [missionEnabled, setMissionEnabled] = useState<Record<string, boolean>>({
@@ -260,42 +263,64 @@ export default function SoloHomeScreen() {
         {/* Menu Dropdown */}
         {isMenuOpen && (
           <div className="absolute left-[173px] top-[73px] z-50">
-            <div className="absolute top-0 left-0 w-[200px] h-[154px]">
-              <img alt="" className="block size-full" src={imgGroup65} />
+            {/* 메뉴 배경 */}
+            <div className="absolute top-0 left-0 w-[200px] h-[202px]">
+              <img alt="" className="block max-w-none size-full" src={imgMenuBg} />
             </div>
-            <div className="absolute left-[10px] top-[10px]">
+
+            {/* 메뉴 항목들 */}
+            <div className="absolute left-[10px] top-[10px] flex flex-col gap-[10px] w-[180px]">
+              {/* 모드 변경 */}
+              <button
+                className="relative w-[180px] h-[38px] cursor-pointer"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setShowModeChangePopup(true);
+                }}
+              >
+                <div className="absolute inset-0 bg-[#b9915e] border border-[#f0c58f] rounded-[6px]" />
+                <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
+                  모드 변경
+                </p>
+              </button>
+
               {/* 만든개발자 */}
               <button
-                className="absolute top-0 left-0 w-[180px] h-[38px] cursor-pointer"
+                className="relative w-[180px] h-[38px] cursor-pointer"
                 onClick={() => {
                   setIsMenuOpen(false);
                   setShowDeveloperPopup(true);
                 }}
               >
-                <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
+                <div className="absolute inset-0 bg-[#b9915e] border border-[#f0c58f] rounded-[6px]" />
                 <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
                   만든개발자
                 </p>
               </button>
+
               {/* 알림 */}
               <button
-                className="absolute top-[48px] left-0 w-[180px] h-[38px] cursor-pointer"
+                className="relative w-[180px] h-[38px] cursor-pointer"
                 onClick={() => {
                   setIsMenuOpen(false);
                   window.open('https://cafe.naver.com/f-e/cafes/31663026/menus/1?viewType=L', '_blank');
                 }}
               >
-                <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
+                <div className="absolute inset-0 bg-[#b9915e] border border-[#f0c58f] rounded-[6px]" />
                 <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
                   알림
                 </p>
               </button>
+
               {/* 로그아웃 */}
               <button
-                className="absolute top-[96px] left-0 w-[180px] h-[38px] cursor-pointer"
-                onClick={() => navigate("/")}
+                className="relative w-[180px] h-[38px] cursor-pointer"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate("/");
+                }}
               >
-                <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
+                <div className="absolute inset-0 bg-[#b9915e] border border-[#f0c58f] rounded-[6px]" />
                 <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
                   로그아웃
                 </p>
@@ -734,6 +759,11 @@ export default function SoloHomeScreen() {
       )}
       {showDeveloperPopup && (
         <DeveloperInfoPopup onClose={() => setShowDeveloperPopup(false)} />
+      )}
+
+      {/* 모드 변경 팝업 */}
+      {showModeChangePopup && (
+        <ModeChangePopup onClose={() => setShowModeChangePopup(false)} />
       )}
 
       {/* 미션완료 팝업 */}

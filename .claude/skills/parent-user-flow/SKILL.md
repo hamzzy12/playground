@@ -214,9 +214,13 @@ ParentHomeScreen
 │       ├── 일반 카드 클릭 → ProductEditPopup
 │       ├── 품절 카드 → ProductRefillPopup
 │       └── 배송완료 카드 → ProductRewardPopup
-├── 햄버거 메뉴 (3개 항목)
+├── 아이 선택 드롭다운 (헤더 "아이 : 김쭈니" 클릭)
+│   ├── 자녀 목록 (김쭈니, 김나나)
+│   └── 아이추가 버튼
+├── 햄버거 메뉴 (4개 항목, 200x202 `imgMenuBg`)
+│   ├── 모드 변경 → ModeChangePopup (싱글모드/부모모드 전환)
 │   ├── 만든개발자 → DeveloperInfoPopup
-│   ├── 알림 (미구현)
+│   ├── 알림 → 네이버 카페 링크 (새 탭)
 │   └── 로그아웃 → navigate('/')
 └── 하단 네비게이션
     ├── 미션홈 (활성)

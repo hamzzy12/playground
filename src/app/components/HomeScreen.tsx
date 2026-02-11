@@ -29,9 +29,10 @@ import imgImage34 from "figma:asset/1f04a42ee33275b3f150a4dc2ddde91b9839c383.png
 import imgImage41 from "figma:asset/fff6d42b3b5957c3ef2140ea9b993bb9db708049.png";
 import imgImage52 from "figma:asset/c368e03333cec45fed8236b2ca94b1f8e78c82d4.png";
 import imgImage77 from "figma:asset/cf6022d6ba1edae48e648736e5f3c30ba3130330.png";
-import imgImage47 from "figma:asset/149ffd9965dec6b119823221359b74045abf60b7.png";
-import imgImage49 from "figma:asset/f80d92b0aa5fe352e0affa98dc34d4f5654cddc2.png";
-import imgImage48 from "figma:asset/f62dd14ca55f929a3069b8da15c4902593663f9e.png";
+import imgImage74 from "figma:asset/bf6aba8970b6e0b45897fd2685ac7ef492144c8e.png";
+import imgImage78 from "figma:asset/3c073d66f9a0c48e0d7e037390e6668aad752c1b.png";
+import imgGroup60 from "@/assets/c4338e4775c77da0d1a7c6298fbcf6dcf9b27fe8.svg";
+import imgGroup162 from "@/assets/917899768af2bdc82d70468ecf8b2eb6609ea73e.svg";
 import imgImage45 from "figma:asset/fb2306265cb70042010e7f9b17540ae4244eb277.png";
 import imgImage46 from "figma:asset/5f0f538fb1547384976c70a598ea8abfa9121d35.png";
 import imgImage50 from "figma:asset/06750638a04f2b3069b1057f814539a0302a2245.png";
@@ -40,13 +41,16 @@ import imgImage37 from "figma:asset/409eeaf8b8d3d94dd075d0b92daaa9b7111bd5df.png
 import imgImage38 from "figma:asset/8148c67e4f82e7c37584d8a139dd13503abe9306.png";
 import imgCoin from "figma:asset/4e34cf3a2b2ddea240a98b7184299dc4893e0819.png";
 import imgHamberger from "figma:asset/cbce2ab124aac67762a2b6ddf11aaa5defb044a4.png";
-import imgImage33 from "figma:asset/0211ed9a365c410c14df8931e04d20f485ded183.png";
 import imgGiveUp from "figma:asset/8e84a045d8b268a46a68ba2858691647755a8a10.png";
 import imgChallengeSuccess from "figma:asset/5e53b1193805a5d5a43f46e2a3b6fa73f6e30911.png";
 import imgImage59 from "figma:asset/ed6117d0cb27758f4af5f1b706c8fe1515b5f600.png";
 import imgImage60 from "figma:asset/7c4559a30c02a8324962e51c90a82dfdf2c358c3.png";
 import svgPathsBlue from "@/imports/svg-d8ty54xrai";
 import svgPathsMenu from "@/imports/svg-kmzz9f9dmz";
+import imgBarYellow from "figma:asset/3d0b785a346010a999a1dd72bd6a85f46b406120.svg";
+import imgEditBtn from "figma:asset/799e50dfe7b7023b5b89d5b87d6f541e8e517937.png";
+import imgToggleOn from "figma:asset/53f85dfeb2f6b438582311a06991c630d2551111.svg";
+import imgToggleOff from "figma:asset/4c3c0360ff1b8b3b2e4a23e9fd5542b76ca16eab.svg";
 
 interface MissionCardProps {
   bgColor: string;
@@ -203,6 +207,8 @@ export default function HomeScreen() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
+  const [missionSubTab, setMissionSubTab] = useState<'list' | 'manage'>('list');
+  const [missionEnabled, setMissionEnabled] = useState<Record<string, boolean>>({});
   const [isInitialRender, setIsInitialRender] = useState(true);
   const [showCompletePopup, setShowCompletePopup] = useState(false);
   const [completingMissionId, setCompletingMissionId] = useState<string | null>(null);
@@ -231,11 +237,16 @@ export default function HomeScreen() {
     }
   }, [missions, missionOrder.length]);
 
-  // 완료된 미션 처리
+  // 완료된 미션 처리 + 탭 복원
   useEffect(() => {
-    const state = location.state as { completedMissionId?: string } | null;
+    const state = location.state as { completedMissionId?: string; missionSubTab?: 'list' | 'manage' } | null;
     if (state?.completedMissionId) {
       updateMissionStatus(state.completedMissionId, 'completed');
+    }
+    if (state?.missionSubTab) {
+      setMissionSubTab(state.missionSubTab);
+    }
+    if (state) {
       // state 초기화 (뒤로가기 시 중복 처리 방지)
       window.history.replaceState({}, document.title);
     }
@@ -288,29 +299,39 @@ export default function HomeScreen() {
     <div className="min-h-screen w-full flex justify-center bg-gray-100">
       <div className="bg-white h-[852px] relative w-[393px] overflow-hidden" data-name="홈화면">
       {/* Layer 1: Sky Background */}
-      <div className="absolute h-[854px] left-[-1px] top-[-2px] w-[394px]" data-name="image 51">
+      <div className="absolute h-[854px] left-0 top-0 w-[394px]" data-name="image 51">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage51} />
       </div>
 
       {/* Layer 2: Character Face & Sparkles (Behind the brown frame) */}
-      <div className="absolute h-[159px] left-[121px] top-[59px] w-[152px]" data-name="image 90">
+      <div className="absolute h-[159px] left-[132px] top-[53px] w-[152px]" data-name="image 90">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage90} />
       </div>
-      <div className="absolute left-[39px] size-[21px] top-[142px]" data-name="image 34">
+      <div className="absolute left-[111px] size-[21px] top-[105px]" data-name="image 34">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage34} />
       </div>
-      <div className="absolute left-[66px] size-[29px] top-[98px]" data-name="image 40">
+      <div className="absolute left-[336px] size-[17px] top-[121px]" data-name="image 40">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage34} />
+      </div>
+      <div className="absolute left-[353px] size-[13px] top-[88px]" data-name="image 76">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <img alt="" className="absolute left-0 max-w-none size-full top-0" src={imgImage34} />
+        </div>
       </div>
 
       {/* Layer 3: Brown Frame (Covers character body parts) */}
-      <div className="absolute h-[805px] left-0 top-[-2px] w-[393px]" data-name="image 52">
+      <div className="absolute h-[803px] left-0 top-0 w-[394px]" data-name="image 52">
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage52} />
       </div>
 
-      {/* Layer 4: Coins/Body Foreground (On top of brown frame) */}
-      <div className="absolute h-[78px] left-[38px] top-[129px] w-[318px]" data-name="image 33">
-        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage33} />
+      {/* Layer 4: New foreground images */}
+      <div className="absolute h-[53px] left-[297px] top-[142px] w-[56px]" data-name="image 74">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <img alt="" className="absolute h-[149.06%] left-[-454.95%] max-w-none top-[-49.06%] w-[556.34%]" src={imgImage74} />
+        </div>
+      </div>
+      <div className="absolute h-[49px] left-[62px] top-[138px] w-[70px]" data-name="image 78">
+        <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage78} />
       </div>
 
       {/* Layer 5: Static UI Elements (Top Header, Tabs, etc) */}
@@ -429,56 +450,73 @@ export default function HomeScreen() {
             </div>
           )}
 
-          {/* Mission is Good (Speech Bubble) */}
-          <div className="absolute left-[29px] top-[77px] w-[130px] h-[50px]">
+          {/* Speech Bubble */}
+          <div className="absolute left-[43px] top-[76px] w-[130px] h-[50px]">
             <img alt="" className="absolute inset-0 w-full h-full object-cover" src={imgImage77} />
-            <p className="absolute inset-0 flex items-center justify-center pt-[2px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[#291608] text-[18px]">미션이 좋아</p>
+            <p className="absolute inset-0 flex items-center justify-center pt-[2px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[#291608] text-[18px]">오늘은 몇점?</p>
           </div>
 
-          {/* Date Selector Strip (Tabs Area) */}
-          <div className="absolute top-[211px] left-[16px] w-[361px] z-30 h-[37px] pointer-events-auto">
-             {/* Tab Background Track */}
-             <div className="absolute inset-0 bg-[#4c2b0f] rounded-[8px]">
-                <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_4px_0px_0px_rgba(0,0,0,0.25)]" />
-             </div>
-
-             {/* Active Tab Indicator */}
-             <motion.div
-               className="absolute top-0 left-0 w-[180px] h-[37px]"
-               animate={{ x: activeTab === 'mission' ? 0 : 181 }}
-               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-             >
-                <img className="w-full h-full object-cover" src={imgImage41} alt="Active Tab" />
-             </motion.div>
-
-             {/* Click Handlers (Invisible) */}
-             <div
-                className="absolute top-0 left-0 w-[180px] h-[37px] cursor-pointer z-10"
-                onClick={() => setActiveTab('mission')}
-             />
-             <div
-                className="absolute top-0 right-0 w-[181px] h-[37px] cursor-pointer z-10"
-                onClick={() => setActiveTab('shop')}
-             />
-
-             {/* Tab Texts */}
-             <p
-               className={`absolute left-[90.5px] top-[2px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[22px] leading-[1.5] text-center pointer-events-none z-20 transition-colors duration-300 ${activeTab === 'mission' ? 'text-white' : 'text-white/30'}`}
-               style={{ textShadow: '3px 0 0 #45270B, -3px 0 0 #45270B, 0 3px 0 #45270B, 0 -3px 0 #45270B, 2.1px 2.1px 0 #45270B, -2.1px 2.1px 0 #45270B, 2.1px -2.1px 0 #45270B, -2.1px -2.1px 0 #45270B, 3px 1px 0 #45270B, -3px 1px 0 #45270B, 3px -1px 0 #45270B, -3px -1px 0 #45270B, 1px 3px 0 #45270B, -1px 3px 0 #45270B, 1px -3px 0 #45270B, -1px -3px 0 #45270B' }}
-             >
-                미션
-             </p>
-             <p
-               className={`absolute left-[269px] top-[2px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[22px] leading-[1.5] text-center pointer-events-none z-20 transition-colors duration-300 ${activeTab === 'shop' ? 'text-white' : 'text-white/30'}`}
-               style={{ textShadow: '3px 0 0 #45270B, -3px 0 0 #45270B, 0 3px 0 #45270B, 0 -3px 0 #45270B, 2.1px 2.1px 0 #45270B, -2.1px 2.1px 0 #45270B, 2.1px -2.1px 0 #45270B, -2.1px -2.1px 0 #45270B, 3px 1px 0 #45270B, -3px 1px 0 #45270B, 3px -1px 0 #45270B, -3px -1px 0 #45270B, 1px 3px 0 #45270B, -1px 3px 0 #45270B, 1px -3px 0 #45270B, -1px -3px 0 #45270B' }}
-             >
-                소원 상점
-             </p>
+          {/* Tab Bar Background (imgGroup162) */}
+          <div className="absolute top-[195px] left-0 w-[394px] h-[57px]">
+            <img alt="" className="block max-w-none size-full" src={imgGroup162} />
           </div>
 
-          {/* Today's Mission Header - ONLY show on Mission Tab */}
+          {/* Tab Labels */}
+          <p
+            className={`absolute left-[98.5px] top-[212px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[22px] leading-[1.5] text-center pointer-events-auto cursor-pointer z-20 transition-colors duration-300 ${activeTab === 'mission' ? 'text-white' : 'text-white/30'}`}
+            onClick={() => setActiveTab('mission')}
+          >
+            미션
+          </p>
+          <p
+            className={`absolute left-[297px] top-[212px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[22px] leading-[1.5] text-center pointer-events-auto cursor-pointer z-20 transition-colors duration-300 ${activeTab === 'shop' ? 'text-white' : 'text-white/30'}`}
+            onClick={() => setActiveTab('shop')}
+          >
+            소원 상점
+          </p>
+
+          {/* Sub-tabs (Mission tab only) */}
           {activeTab === 'mission' && (
-            <div className="absolute top-[260px] left-[16px] w-[361px] h-[47px]">
+            <div className="absolute top-[267px] left-[16px] w-[240px] h-[37px] z-30 pointer-events-auto">
+              {/* Background Track */}
+              <div className="absolute inset-0 bg-[#4c2b0f] rounded-[8px]">
+                <div className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0px_4px_0px_0px_rgba(0,0,0,0.25)]" />
+              </div>
+
+              {/* Active Indicator */}
+              <motion.div
+                className="absolute top-0 h-[37px] w-[120px] bg-[#b9915e] border-2 border-[#f0c58f] rounded-[8px]"
+                animate={{ x: missionSubTab === 'list' ? 0 : 120 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+
+              {/* Click Handlers */}
+              <div className="absolute top-0 left-0 w-[120px] h-full cursor-pointer z-10" onClick={() => setMissionSubTab('list')} />
+              <div className="absolute top-0 right-0 w-[120px] h-full cursor-pointer z-10" onClick={() => setMissionSubTab('manage')} />
+
+              {/* Labels */}
+              <div className="absolute left-0 top-0 w-[120px] h-full flex items-center justify-center pointer-events-none z-20">
+                <p
+                  className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-center transition-colors duration-300 ${missionSubTab === 'list' ? 'text-white' : 'text-white/30'}`}
+                  style={{ textShadow: '2px 0 0 #45270B, -2px 0 0 #45270B, 0 2px 0 #45270B, 0 -2px 0 #45270B, 1.4px 1.4px 0 #45270B, -1.4px 1.4px 0 #45270B, 1.4px -1.4px 0 #45270B, -1.4px -1.4px 0 #45270B' }}
+                >
+                  미션 목록
+                </p>
+              </div>
+              <div className="absolute left-[120px] top-0 w-[120px] h-full flex items-center justify-center pointer-events-none z-20">
+                <p
+                  className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-center transition-colors duration-300 ${missionSubTab === 'manage' ? 'text-white' : 'text-white/30'}`}
+                  style={{ textShadow: '2px 0 0 #45270B, -2px 0 0 #45270B, 0 2px 0 #45270B, 0 -2px 0 #45270B, 1.4px 1.4px 0 #45270B, -1.4px 1.4px 0 #45270B, 1.4px -1.4px 0 #45270B, -1.4px -1.4px 0 #45270B' }}
+                >
+                  미션 관리
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Today's Mission Header - Show on Mission Tab > List Sub-tab */}
+          {activeTab === 'mission' && missionSubTab === 'list' && (
+            <div className="absolute top-[314px] left-[16px] w-[361px] h-[47px]">
               <div className="absolute bg-[#532807] inset-0 rounded-[8px]" />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white">
                 {getTodayDateString()}
@@ -493,11 +531,76 @@ export default function HomeScreen() {
       {/* Layer 6: Scrollable Content Area (Z-Index 10) */}
       <motion.div
         className={`absolute left-0 w-full overflow-y-auto z-10 pt-[10px] pb-[40px] bottom-[60px] ${activeTab === 'mission' ? 'px-[16px]' : 'pl-[12px] pr-[14px]'}`}
-        animate={{ top: activeTab === 'mission' ? 315 : 265 }}
+        animate={{ top: activeTab === 'mission' ? (missionSubTab === 'list' ? 370 : 315) : 265 }}
         transition={isInitialRender ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
       >
-        
-        {activeTab === 'mission' ? (
+
+        {activeTab === 'mission' && missionSubTab === 'manage' ? (
+          /* MISSION MANAGE CONTENT */
+          <>
+            {/* 미션 만들기 버튼 */}
+            <button
+              className="relative w-[361px] h-[47px] mx-auto mb-[15px] cursor-pointer active:scale-95 transition-transform"
+              onClick={() => navigate('/mission-propose', { state: { from: 'home-manage' } })}
+            >
+              <div className="absolute inset-0 top-[5px] bg-[#45270b] rounded-[8px]" />
+              <div className="absolute inset-0 bg-[#feb700] rounded-[8px]" />
+              <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
+                미션 만들기
+              </p>
+            </button>
+
+            {/* 미션 카드 목록 */}
+            {missionOrder
+              .map(id => missions.find(m => m.id === id))
+              .filter((mission): mission is typeof missions[0] => mission !== undefined)
+              .map(mission => {
+                const enabled = missionEnabled[mission.id] ?? true;
+                return (
+                  <div key={mission.id} className="relative w-[361px] h-[152px] mx-auto mb-[10px]">
+                    {/* Shadow */}
+                    <div className="absolute left-0 top-[6px] w-[361px] h-[146px] bg-[#45270b] rounded-[8px]" />
+                    {/* Card */}
+                    <div className="absolute left-0 top-0 w-[361px] h-[146px] bg-[#f2e1be] rounded-[8px]" />
+                    {/* Bottom Bar */}
+                    <div className="absolute left-0 top-[99px] w-[361px] h-[47px]">
+                      <img alt="" className="block w-full h-full" src={imgBarYellow} />
+                    </div>
+                    {/* Icon */}
+                    <div className="absolute left-[9px] top-[15px] size-[66px]">
+                      <img alt="" className="w-full h-full object-cover" src={imgImage46} />
+                    </div>
+                    {/* Title */}
+                    <p className="absolute left-[84px] top-[17px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[20px] text-[#492607]">
+                      {mission.title}
+                    </p>
+                    {/* Subtitle */}
+                    <p className="absolute left-[84px] top-[47px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[20px] text-[#492607]">
+                      {mission.subtitle}
+                    </p>
+                    {/* Reward */}
+                    <p className="absolute left-[16px] top-[104px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
+                      보상 : 칭찬코인 +{mission.reward}
+                    </p>
+                    {/* 수정하기 Button */}
+                    <div
+                      className="absolute right-[15px] top-[10px] w-[80px] h-[40px] cursor-pointer active:scale-95 transition-transform"
+                      onClick={() => navigate('/mission-edit')}
+                    >
+                      <img alt="수정하기" className="w-full h-full object-cover" src={imgEditBtn} />
+                    </div>
+                    {/* Toggle */}
+                    <div
+                      className="absolute right-[15px] top-[108px] w-[58px] h-[30px] cursor-pointer"
+                      onClick={() => setMissionEnabled(prev => ({ ...prev, [mission.id]: !enabled }))}
+                    >
+                      <img alt="" className="block w-full h-full" src={enabled ? imgToggleOn : imgToggleOff} />
+                    </div>
+                  </div>
+                );
+              })}
+          </>
+        ) : activeTab === 'mission' ? (
           /* MISSION LIST CONTENT */
           <>
             {missionOrder
@@ -590,31 +693,25 @@ export default function HomeScreen() {
       </motion.div>
 
       {/* Layer 7: Fixed Bottom Navigation (Z-Index 30) */}
-      <div className="absolute bottom-0 left-0 w-full h-[50px] z-30 pointer-events-none">
-        <div className="absolute top-[-40px] left-0 w-full h-[90px] pointer-events-auto">
-             {/* Bottom bar background svg shape */}
-             <div className="absolute bottom-[5px] left-0 w-[134px] h-[46px] rounded-b-[16px] overflow-hidden">
-                <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 134 46">
-                    <path d={svgPaths.p28dd3d40} fill="#875224" />
-                </svg>
-             </div>
-             
-             {/* Icons */}
-             {/* Mission Home (Active) */}
-             <div className="absolute left-[37px] bottom-[10px] w-[57px] h-[26px]">
-                <img alt="" className="w-full h-full object-cover" src={imgImage47} />
-             </div>
-
-             {/* Ranking */}
-             <div className="absolute left-[162px] bottom-[10px] w-[60px] h-[26px] opacity-30 cursor-pointer" onClick={() => navigate("/ranking")}>
-                <img alt="" className="w-full h-full object-cover" src={imgImage48} />
-             </div>
-
-             {/* Report */}
-             <div className="absolute left-[277px] bottom-[10px] w-[96px] h-[26px] opacity-30">
-                <img alt="" className="w-full h-full object-cover" src={imgImage49} />
-             </div>
+      <div className="absolute bottom-0 left-0 w-full h-[50px] z-30">
+        {/* Active tab indicator */}
+        <div className="absolute left-0 top-[803px] w-[133px] h-[46px]" style={{ top: 'auto', bottom: '3px' }}>
+          <img alt="" className="block max-w-none size-full" src={imgGroup60} />
         </div>
+
+        {/* Tab Labels */}
+        <p className="absolute left-[68px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-white leading-[1.5]">
+          미션홈
+        </p>
+        <p
+          className="absolute left-[197.5px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-[rgba(255,255,255,0.3)] leading-[1.5] cursor-pointer"
+          onClick={() => navigate("/ranking")}
+        >
+          랭킹전
+        </p>
+        <p className="absolute left-[332.5px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-[rgba(255,255,255,0.3)] leading-[1.5]">
+          성장보고서
+        </p>
       </div>
 
 

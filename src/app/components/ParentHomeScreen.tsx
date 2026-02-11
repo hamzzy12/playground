@@ -14,6 +14,7 @@ import ProductEditPopup from "./ProductEditPopup";
 import ProductRefillPopup from "./ProductRefillPopup";
 import ProductRewardPopup from "./ProductRewardPopup";
 import MissionEditPopup from "./MissionEditPopup";
+import ModeChangePopup from "./ModeChangePopup";
 import imgImage51 from "figma:asset/25e22a55b2742b552f58579327786ada9e64aa32.png";
 import imgImage92 from "figma:asset/40787136f6fb551d30f83647db8d86726e3ea97e.png";
 import imgImage52 from "figma:asset/c368e03333cec45fed8236b2ca94b1f8e78c82d4.png";
@@ -49,11 +50,14 @@ import imgToggleOff from "figma:asset/4c3c0360ff1b8b3b2e4a23e9fd5542b76ca16eab.s
 import imgCheerInput from "figma:asset/9012c968cdceedd9c681ae5f0166c2741293028d.svg";
 import imgCheerCardBg from "figma:asset/c3f5fe2546bc6c4b9e38f46ce9daabe49907b3ee.svg";
 import imgCheerCardShadow from "figma:asset/3e12aad1589bea607277e5580ba3864852198247.svg";
+import imgChildSelectBg from "figma:asset/245c20d676c834a6ee62c555210ef1ea0727f8d4.svg";
+import imgMenuBg from "figma:asset/70341e8811fcb0d7f9739fd52adbed0b2f9efb83.svg";
 
 export default function ParentHomeScreen() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeveloperPopup, setShowDeveloperPopup] = useState(false);
+  const [showModeChangePopup, setShowModeChangePopup] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [showProductCreatePopup, setShowProductCreatePopup] = useState(false);
   const [isMissionCreateOpen, setIsMissionCreateOpen] = useState(false);
@@ -66,6 +70,9 @@ export default function ParentHomeScreen() {
   const [missionEnabled, setMissionEnabled] = useState<Record<string, boolean>>({ '1': true, '2': false, '3': true });
   const [cheerMessage, setCheerMessage] = useState('');
   const [cheerHistory, setCheerHistory] = useState<string[]>(['오늘도 열심히 잘 했어!', '지금처럼 쭉 가자~~']);
+  const [isChildSelectOpen, setIsChildSelectOpen] = useState(false);
+  const [selectedChild, setSelectedChild] = useState('김쭈니');
+  const [children] = useState(['김쭈니', '김나나']);
 
   // 소원상점 상품 목록
   interface ShopProduct {
@@ -437,16 +444,54 @@ export default function ParentHomeScreen() {
         <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage40} />
       </div>
 
-      {/* Header - Child Name */}
-      <div className="absolute left-[16px] top-[15px]">
+      {/* Header - Child Name (클릭 시 아이 선택 드롭다운) */}
+      <button
+        className="absolute left-[16px] top-[15px] cursor-pointer z-40"
+        onClick={() => { setIsChildSelectOpen(!isChildSelectOpen); setIsMenuOpen(false); }}
+      >
         <div className="absolute bg-[#291608] h-[45px] left-0 rounded-[8px] top-0 w-[124px]" />
-        <p className="absolute left-0 top-0 w-[124px] h-[45px] flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] text-white">아이 : 김쭈니</p>
-      </div>
+        <p className="absolute left-0 top-0 w-[124px] h-[45px] flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] not-italic text-[18px] text-white">아이 : {selectedChild}</p>
+      </button>
+
+      {/* 아이 선택 드롭다운 */}
+      {isChildSelectOpen && (
+        <div className="absolute left-[15px] top-[66px] w-[125px] h-[197px] z-40">
+          {/* 드롭다운 배경 */}
+          <div className="absolute left-0 top-0 w-[125px] h-[143px]">
+            <img alt="" className="block max-w-none size-full" src={imgChildSelectBg} />
+          </div>
+          {/* 자녀 목록 */}
+          {children.map((child, index) => (
+            <button
+              key={child}
+              className="absolute left-[10px] w-[105px] h-[32px] cursor-pointer hover:bg-white/10 rounded-[4px] transition-colors"
+              style={{ top: `${12 + index * 38}px` }}
+              onClick={() => {
+                setSelectedChild(child);
+                setIsChildSelectOpen(false);
+              }}
+            >
+              <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-white">
+                {child}
+              </p>
+            </button>
+          ))}
+          {/* 아이추가 버튼 */}
+          <div
+            className="absolute bg-[rgba(255,255,255,0.2)] border-2 border-solid border-white h-[38px] left-[10px] rounded-[6px] top-[93px] w-[103px] cursor-pointer hover:bg-white/30 transition-colors"
+            onClick={() => setIsChildSelectOpen(false)}
+          >
+            <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[18px] text-white">
+              아이추가
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Hamburger Menu Button */}
       <button
         className="absolute left-[323px] top-[15px] cursor-pointer z-50"
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        onClick={() => { setIsMenuOpen(!isMenuOpen); setIsChildSelectOpen(false); }}
       >
         <div className="absolute bg-[#644f41] rounded-[8px] size-[50px]" />
         <div className="absolute h-[25px] left-[11px] top-[12px] w-[28px]" data-name="hamberger">
@@ -457,22 +502,36 @@ export default function ParentHomeScreen() {
       {/* Menu Dropdown */}
       {isMenuOpen && (
         <div className="absolute left-[179px] top-[79px] z-50">
-          <div className="absolute top-0 left-0 w-[200px] h-[154px]">
-            <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 200 154">
-              <path d={svgPathsMenu.p216fec00} fill="#311D0C" />
-            </svg>
+          {/* 메뉴 배경 */}
+          <div className="absolute top-0 left-0 w-[200px] h-[202px]">
+            <img alt="" className="block max-w-none size-full" src={imgMenuBg} />
           </div>
 
-          <div className="absolute left-[10px] top-[10px]">
+          {/* 메뉴 항목들 */}
+          <div className="absolute left-[10px] top-[10px] flex flex-col gap-[10px] w-[180px]">
+            {/* 모드 변경 */}
+            <button
+              className="relative w-[180px] h-[38px] cursor-pointer"
+              onClick={() => {
+                setIsMenuOpen(false);
+                setShowModeChangePopup(true);
+              }}
+            >
+              <div className="absolute inset-0 bg-[#b9915e] border border-[#f0c58f] rounded-[6px]" />
+              <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
+                모드 변경
+              </p>
+            </button>
+
             {/* 만든개발자 */}
             <button
-              className="absolute top-0 left-0 w-[180px] h-[38px] cursor-pointer"
+              className="relative w-[180px] h-[38px] cursor-pointer"
               onClick={() => {
                 setIsMenuOpen(false);
                 setShowDeveloperPopup(true);
               }}
             >
-              <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
+              <div className="absolute inset-0 bg-[#b9915e] border border-[#f0c58f] rounded-[6px]" />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
                 만든개발자
               </p>
@@ -480,23 +539,27 @@ export default function ParentHomeScreen() {
 
             {/* 알림 */}
             <button
-              className="absolute top-[48px] left-0 w-[180px] h-[38px] cursor-pointer"
+              className="relative w-[180px] h-[38px] cursor-pointer"
               onClick={() => {
                 setIsMenuOpen(false);
                 window.open('https://cafe.naver.com/f-e/cafes/31663026/menus/1?viewType=L', '_blank');
               }}
             >
-              <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
+              <div className="absolute inset-0 bg-[#b9915e] border border-[#f0c58f] rounded-[6px]" />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
                 알림
               </p>
             </button>
-            
+
+            {/* 로그아웃 */}
             <button
-              className="absolute top-[96px] left-0 w-[180px] h-[38px]"
-              onClick={() => navigate("/")}
+              className="relative w-[180px] h-[38px] cursor-pointer"
+              onClick={() => {
+                setIsMenuOpen(false);
+                navigate("/");
+              }}
             >
-              <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
+              <div className="absolute inset-0 bg-[#b9915e] border border-[#f0c58f] rounded-[6px]" />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
                 로그아웃
               </p>
@@ -659,6 +722,11 @@ export default function ParentHomeScreen() {
         </motion.div>
       )}
       </div>
+
+      {/* 모드 변경 팝업 */}
+      {showModeChangePopup && (
+        <ModeChangePopup onClose={() => setShowModeChangePopup(false)} />
+      )}
 
       {/* 만든개발자 팝업 */}
       {showDeveloperPopup && (
