@@ -716,7 +716,10 @@ export default function SoloHomeScreen() {
         <p className="-translate-x-1/2 absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] left-[197.5px] text-[21px] text-[rgba(255,255,255,0.3)] text-center top-[814px] cursor-pointer" onClick={() => navigate("/solo-ranking")}>
           랭킹전
         </p>
-        <p className="-translate-x-1/2 absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] left-[332.5px] text-[21px] text-[rgba(255,255,255,0.3)] text-center top-[814px]">
+        <p
+          className="-translate-x-1/2 absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] left-[332.5px] text-[21px] text-[rgba(255,255,255,0.3)] text-center top-[814px] cursor-pointer"
+          onClick={() => navigate("/growth-report")}
+        >
           성장보고서
         </p>
       </div>

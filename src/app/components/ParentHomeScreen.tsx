@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
+import { useAuth } from "@/app/context/AuthContext";
+import { useMissions } from "@/app/context/MissionContext";
 import svgPaths from "@/imports/svg-disegqpe5s";
 import svgPathsMenu from "@/imports/svg-suvnghhced";
 import svgPathsShop from "@/imports/svg-lp98h8m8qs";
-import MissionCreateModal from "@/imports/MissionCreateModal";
 import MissionProposeModal from "@/imports/MissionProposeModal";
 import AlertPopup from "@/imports/AlertPopup";
 import MissionCard, { Mission } from "./MissionCard";
@@ -55,24 +56,24 @@ import imgMenuBg from "figma:asset/70341e8811fcb0d7f9739fd52adbed0b2f9efb83.svg"
 
 export default function ParentHomeScreen() {
   const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
+  const { missions, addMission, updateMission, deleteMission, toggleMissionEnabled } = useMissions();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeveloperPopup, setShowDeveloperPopup] = useState(false);
   const [showModeChangePopup, setShowModeChangePopup] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [showProductCreatePopup, setShowProductCreatePopup] = useState(false);
-  const [isMissionCreateOpen, setIsMissionCreateOpen] = useState(false);
   const [isMissionProposeOpen, setIsMissionProposeOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ShopProduct | null>(null);
   const [refillingProductId, setRefillingProductId] = useState<string | null>(null);
   const [rewardingProductId, setRewardingProductId] = useState<string | null>(null);
   const [editingMission, setEditingMission] = useState<Mission | null>(null);
   const [subTab, setSubTab] = useState<'list' | 'manage' | 'cheer'>('list');
-  const [missionEnabled, setMissionEnabled] = useState<Record<string, boolean>>({ '1': true, '2': false, '3': true });
   const [cheerMessage, setCheerMessage] = useState('');
   const [cheerHistory, setCheerHistory] = useState<string[]>(['오늘도 열심히 잘 했어!', '지금처럼 쭉 가자~~']);
   const [isChildSelectOpen, setIsChildSelectOpen] = useState(false);
-  const [selectedChild, setSelectedChild] = useState('김쭈니');
-  const [children] = useState(['김쭈니', '김나나']);
+  const [selectedChild, setSelectedChild] = useState(profile?.name ?? '아이');
+  const [children] = useState([profile?.name ?? '아이']);
 
   // 소원상점 상품 목록
   interface ShopProduct {
@@ -88,61 +89,25 @@ export default function ParentHomeScreen() {
     { id: '3', name: '유튜브시청20분', price: 1, iconSrc: null, status: 'delivered' },
   ]);
 
-  // 미션 목록 상태
-  const initialMissions: Mission[] = [
-    {
-      id: '1',
-      title: '구몬학습지 풀기',
-      description: 'p7~p15까지 할 수 있지?',
-      reward: 1,
-      backgroundColor: '#f2e1be',
-      bottomBarColor: '#FEB700',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      title: '태권도 학원 가기',
-      description: '학원 갔다오는게 어때?',
-      reward: 1,
-      backgroundColor: '#f5eaf8',
-      bottomBarColor: '#C07FE5',
-      status: 'active'
-    },
-    {
-      id: '3',
-      title: '학교 숙제 하기',
-      description: '학교 복습 빼먹지마~',
-      reward: 1,
-      backgroundColor: '#e8f6ed',
-      bottomBarColor: '#5EE2A0',
-      status: 'active'
-    }
-  ];
-  const [missions, setMissions] = useState<Mission[]>(initialMissions);
+  // MissionCard용 미션 데이터 변환
+  const missionCardData: Mission[] = missions.map(m => ({
+    id: m.id,
+    title: m.title,
+    description: m.subtitle,
+    reward: m.reward,
+    backgroundColor: m.bgColor,
+    bottomBarColor: m.barColor,
+    status: m.status as Mission['status'],
+  }));
 
   // 미션 추가 함수
-  const handleCreateMission = (missionTitle: string, missionDescription: string, missionReward: number, frequency: string) => {
-    const colors = [
-      { bg: '#f2e1be', bar: '#FEB700' },
-      { bg: '#f5eaf8', bar: '#C07FE5' },
-      { bg: '#e8f6ed', bar: '#5EE2A0' },
-      { bg: '#fef5e7', bar: '#F39C12' },
-      { bg: '#ebf5fb', bar: '#3498DB' }
-    ];
-    
-    const colorIndex = missions.length % colors.length;
-    
-    const newMission: Mission = {
-      id: Date.now().toString(),
+  const handleCreateMission = async (missionTitle: string, missionDescription: string, missionReward: number, frequency: string) => {
+    await addMission({
       title: missionTitle || '새로운 미션',
-      description: missionDescription || '',
+      subtitle: missionDescription || '',
       reward: missionReward || 1,
-      backgroundColor: colors[colorIndex].bg,
-      bottomBarColor: colors[colorIndex].bar,
-      status: 'active'
-    };
-    
-    setMissions([newMission, ...missions]);
+      frequency: (frequency as '1회' | '매일' | '매주' | '매월') || '1회',
+    });
     setIsMissionProposeOpen(false);
   };
 
@@ -163,7 +128,7 @@ export default function ParentHomeScreen() {
       {/* Mission Cards - 미션 목록 (스크롤) */}
       {activeTab === 'mission' && subTab === 'list' && (
         <div className="absolute left-0 top-[319px] w-[393px] h-[464px] overflow-y-auto">
-          <div className="relative w-full" style={{ height: `${missions.length * 162 + 10}px` }}>
+          <div className="relative w-full" style={{ height: `${missionCardData.length * 162 + 10}px` }}>
             {/* Mission Card 1 */}
             <div className="absolute left-[16px] top-0">
               <div className="absolute bg-[#45270b] h-[146px] left-0 rounded-[8px] top-[6px] w-[361px]" />
@@ -238,9 +203,10 @@ export default function ParentHomeScreen() {
 
           {/* 미션 관리 카드 목록 (스크롤) */}
           <div className="absolute left-0 top-[370px] w-[393px] h-[413px] overflow-y-auto">
-            <div className="relative w-full" style={{ height: `${missions.length * 162 + 10}px` }}>
-              {missions.map((mission, index) => {
-                const enabled = missionEnabled[mission.id] ?? true;
+            <div className="relative w-full" style={{ height: `${missionCardData.length * 162 + 10}px` }}>
+              {missionCardData.map((mission, index) => {
+                const contextMission = missions.find(m => m.id === mission.id);
+                const enabled = contextMission?.enabled ?? true;
                 return (
                   <div
                     key={mission.id}
@@ -269,7 +235,7 @@ export default function ParentHomeScreen() {
                     {/* 토글 스위치 */}
                     <button
                       className="absolute left-[288px] top-[108px] w-[58px] h-[30px] cursor-pointer z-10"
-                      onClick={(e) => { e.stopPropagation(); setMissionEnabled({ ...missionEnabled, [mission.id]: !enabled }); }}
+                      onClick={(e) => { e.stopPropagation(); toggleMissionEnabled(mission.id, !enabled); }}
                     >
                       <img alt="" className="block w-full h-full" src={enabled ? imgToggleOn : imgToggleOff} />
                     </button>
@@ -554,8 +520,9 @@ export default function ParentHomeScreen() {
             {/* 로그아웃 */}
             <button
               className="relative w-[180px] h-[38px] cursor-pointer"
-              onClick={() => {
+              onClick={async () => {
                 setIsMenuOpen(false);
+                await signOut();
                 navigate("/");
               }}
             >
@@ -579,7 +546,11 @@ export default function ParentHomeScreen() {
       <p className="absolute left-[197.5px] -translate-x-1/2 top-[814px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[21px] text-white/30 text-center whitespace-nowrap" style={{ textShadow: '2px 0 0 #311A06, -2px 0 0 #311A06, 0 2px 0 #311A06, 0 -2px 0 #311A06, 1px 1px 0 #311A06, -1px -1px 0 #311A06, 1px -1px 0 #311A06, -1px 1px 0 #311A06, 2px 1px 0 #311A06, -2px 1px 0 #311A06, 2px -1px 0 #311A06, -2px -1px 0 #311A06, 1px 2px 0 #311A06, -1px 2px 0 #311A06, 1px -2px 0 #311A06, -1px -2px 0 #311A06' }}>
         하루일기
       </p>
-      <p className="absolute left-[332.5px] -translate-x-1/2 top-[814px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[21px] text-white/30 text-center whitespace-nowrap" style={{ textShadow: '2px 0 0 #311A06, -2px 0 0 #311A06, 0 2px 0 #311A06, 0 -2px 0 #311A06, 1px 1px 0 #311A06, -1px -1px 0 #311A06, 1px -1px 0 #311A06, -1px 1px 0 #311A06, 2px 1px 0 #311A06, -2px 1px 0 #311A06, 2px -1px 0 #311A06, -2px -1px 0 #311A06, 1px 2px 0 #311A06, -1px 2px 0 #311A06, 1px -2px 0 #311A06, -1px -2px 0 #311A06' }}>
+      <p
+        className="absolute left-[332.5px] -translate-x-1/2 top-[814px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] leading-[1.5] text-[21px] text-white/30 text-center whitespace-nowrap cursor-pointer"
+        style={{ textShadow: '2px 0 0 #311A06, -2px 0 0 #311A06, 0 2px 0 #311A06, 0 -2px 0 #311A06, 1px 1px 0 #311A06, -1px -1px 0 #311A06, 1px -1px 0 #311A06, -1px 1px 0 #311A06, 2px 1px 0 #311A06, -2px 1px 0 #311A06, 2px -1px 0 #311A06, -2px -1px 0 #311A06, 1px 2px 0 #311A06, -1px 2px 0 #311A06, 1px -2px 0 #311A06, -1px -2px 0 #311A06' }}
+        onClick={() => navigate("/growth-report")}
+      >
         성장보고서
       </p>
 
@@ -774,16 +745,16 @@ export default function ParentHomeScreen() {
           initialDescription={editingMission.description}
           initialReward={editingMission.reward}
           onClose={() => setEditingMission(null)}
-          onConfirm={(data) => {
-            setMissions(missions.map(m =>
-              m.id === editingMission.id
-                ? { ...m, title: data.title, description: data.description, reward: data.reward }
-                : m
-            ));
+          onConfirm={async (data) => {
+            await updateMission(editingMission.id, {
+              title: data.title,
+              subtitle: data.description,
+              reward: data.reward,
+            });
             setEditingMission(null);
           }}
-          onDelete={() => {
-            setMissions(missions.filter(m => m.id !== editingMission.id));
+          onDelete={async () => {
+            await deleteMission(editingMission.id);
             setEditingMission(null);
           }}
         />

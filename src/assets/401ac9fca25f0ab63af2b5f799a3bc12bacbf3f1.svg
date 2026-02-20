@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 43.25 43.2507" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 211">
+<g id="Group 209">
+<path id="Rectangle 68" d="M0 9.91146H43.25V37.25C43.25 40.5637 40.5637 43.25 37.25 43.25H6C2.68629 43.25 0 40.5637 0 37.25V9.91146Z" fill="var(--fill-0, #875224)"/>
+<path id="Rectangle 69" d="M0 6C0 2.68629 2.68629 0 6 0H37.25C40.5637 0 43.25 2.68629 43.25 6V9.91146H0V6Z" fill="var(--fill-0, #9CAB4A)"/>
+</g>
+<path id="Rectangle 71" d="M6 1.50065H37.25C39.7353 1.50065 41.75 3.51537 41.75 6.00065V37.2507C41.75 39.7359 39.7353 41.7507 37.25 41.7507H6C3.51472 41.7507 1.5 39.7359 1.5 37.2507V6.00065C1.5 3.51537 3.51472 1.50065 6 1.50065Z" stroke="var(--stroke-0, #603D1D)" stroke-width="3"/>
+</g>
+</svg>

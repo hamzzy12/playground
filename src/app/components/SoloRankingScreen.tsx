@@ -308,7 +308,7 @@ export default function SoloRankingScreen() {
           {/* 성장보고서 */}
           <button
             className="absolute left-[277px] bottom-[10px] w-[96px] h-[26px] opacity-30 cursor-pointer"
-            onClick={() => {/* TODO */}}
+            onClick={() => navigate("/growth-report")}
           >
             <img alt="성장보고서" className="w-full h-full object-cover" src={imgImage49} />
           </button>

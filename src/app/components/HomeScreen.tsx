@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
+import { useAuth } from "@/app/context/AuthContext";
 import { useMissions, MISSION_STATUS_PRIORITY, MissionStatus } from "@/app/context/MissionContext";
 import MissionCompletePopup from "./MissionCompletePopup";
 import ExchangeConfirmPopup from "./ExchangeConfirmPopup";
@@ -32,7 +33,8 @@ import imgImage77 from "figma:asset/cf6022d6ba1edae48e648736e5f3c30ba3130330.png
 import imgImage74 from "figma:asset/bf6aba8970b6e0b45897fd2685ac7ef492144c8e.png";
 import imgImage78 from "figma:asset/3c073d66f9a0c48e0d7e037390e6668aad752c1b.png";
 import imgGroup60 from "@/assets/c4338e4775c77da0d1a7c6298fbcf6dcf9b27fe8.svg";
-import imgGroup162 from "@/assets/917899768af2bdc82d70468ecf8b2eb6609ea73e.svg";
+import imgMainTabMission from "@/assets/917899768af2bdc82d70468ecf8b2eb6609ea73e.svg";
+import imgMainTabShop from "@/assets/5e41aca0a7ea2967ff0e7ce1012d70d64a5a9d8f.svg";
 import imgImage45 from "figma:asset/fb2306265cb70042010e7f9b17540ae4244eb277.png";
 import imgImage46 from "figma:asset/5f0f538fb1547384976c70a598ea8abfa9121d35.png";
 import imgImage50 from "figma:asset/06750638a04f2b3069b1057f814539a0302a2245.png";
@@ -205,6 +207,7 @@ const getTodayDateString = () => {
 export default function HomeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { profile, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [missionSubTab, setMissionSubTab] = useState<'list' | 'manage'>('list');
@@ -227,15 +230,17 @@ export default function HomeScreen() {
   // Context에서 미션 상태 가져오기
   const { missions, updateMissionStatus } = useMissions();
 
-  // 초기 로드 시에만 정렬된 순서 저장
+  // 미션 목록이 변경되면 정렬된 순서 갱신
   useEffect(() => {
-    if (missionOrder.length === 0 && missions.length > 0) {
+    const missionIds = missions.map(m => m.id);
+    const hasNewMission = missionIds.some(id => !missionOrder.includes(id));
+    if (missionOrder.length === 0 || hasNewMission) {
       const sortedIds = [...missions]
         .sort((a, b) => MISSION_STATUS_PRIORITY[a.status] - MISSION_STATUS_PRIORITY[b.status])
         .map(m => m.id);
       setMissionOrder(sortedIds);
     }
-  }, [missions, missionOrder.length]);
+  }, [missions, missionOrder]);
 
   // 완료된 미션 처리 + 탭 복원
   useEffect(() => {
@@ -357,7 +362,7 @@ export default function HomeScreen() {
               className="absolute left-0 top-0 size-[45px] rounded-[8px]"
               style={{ border: `3px solid ${selectedBorderColor ?? "#00da62"}` }}
             />
-            <p className="absolute right-[10px] top-[10px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white">김쭈니</p>
+            <p className="absolute right-[10px] top-[10px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white">{profile?.name ?? "사용자"}</p>
           </div>
 
           {/* Coin */}
@@ -366,7 +371,7 @@ export default function HomeScreen() {
              <div className="absolute left-0 top-0 size-[40px]">
                 <img alt="" className="w-full h-full object-cover" src={imgCoin} />
              </div>
-             <p className="absolute left-[50px] top-[4px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white">5</p>
+             <p className="absolute left-[50px] top-[4px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white">{profile?.coins ?? 0}</p>
           </div>
 
           {/* Hamburger */}
@@ -439,7 +444,7 @@ export default function HomeScreen() {
                 {/* Logout */}
                 <div
                   className="absolute top-[144px] left-0 w-[180px] h-[38px] cursor-pointer"
-                  onClick={() => navigate("/")}
+                  onClick={async () => { await signOut(); navigate("/"); }}
                 >
                   <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
                   <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
@@ -456,9 +461,9 @@ export default function HomeScreen() {
             <p className="absolute inset-0 flex items-center justify-center pt-[2px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[#291608] text-[18px]">오늘은 몇점?</p>
           </div>
 
-          {/* Tab Bar Background (imgGroup162) */}
+          {/* Tab Bar Background */}
           <div className="absolute top-[195px] left-0 w-[394px] h-[57px]">
-            <img alt="" className="block max-w-none size-full" src={imgGroup162} />
+            <img alt="" className="block max-w-none size-full" src={activeTab === 'mission' ? imgMainTabMission : imgMainTabShop} />
           </div>
 
           {/* Tab Labels */}
@@ -700,16 +705,19 @@ export default function HomeScreen() {
         </div>
 
         {/* Tab Labels */}
-        <p className="absolute left-[68px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-white leading-[1.5]">
+        <p className="absolute left-[65.5px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-white leading-[1.5]">
           미션홈
         </p>
         <p
-          className="absolute left-[197.5px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-[rgba(255,255,255,0.3)] leading-[1.5] cursor-pointer"
+          className="absolute left-[196.5px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-[rgba(255,255,255,0.3)] leading-[1.5] cursor-pointer"
           onClick={() => navigate("/ranking")}
         >
           랭킹전
         </p>
-        <p className="absolute left-[332.5px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-[rgba(255,255,255,0.3)] leading-[1.5]">
+        <p
+          className="absolute left-[327.5px] bottom-[8px] -translate-x-1/2 font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[21px] text-[rgba(255,255,255,0.3)] leading-[1.5] whitespace-nowrap text-center cursor-pointer"
+          onClick={() => navigate("/growth-report")}
+        >
           성장보고서
         </p>
       </div>

@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/app/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 import imgImage12 from "figma:asset/7d773474cf8d2e22025ba48c1015d38f36885283.png";
 import imgImage11 from "figma:asset/39fca110c4e2513bc4a56a1e748ae427b6bc63b0.png";
 import imgImage8 from "figma:asset/f96f017455e91698c320ac65818a05031a68a0b9.png";
@@ -11,15 +13,52 @@ import img11 from "figma:asset/090d51aa33f49cc631bc92b3dd3fcf328050d0bb.png";
 
 export default function LoginScreen() {
   const navigate = useNavigate();
+  const { user, profile, signInWithGoogle, loading } = useAuth();
   const [inviteCode, setInviteCode] = useState("");
+  const [inviteError, setInviteError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleGoogleLogin = () => {
-    console.log("Google Login Clicked");
+  // 이미 로그인된 유저는 역할에 따라 자동 이동
+  useEffect(() => {
+    if (!loading && user && profile) {
+      const route =
+        profile.role === "parent" ? "/parent-home" :
+        profile.role === "child" ? "/home" :
+        "/solo-home";
+      navigate(route, { replace: true });
+    }
+  }, [user, profile, loading, navigate]);
+
+  const handleGoogleLogin = async () => {
+    await signInWithGoogle();
   };
 
-  const handleInviteSubmit = () => {
-    console.log("Invite Code Submitted:", inviteCode);
-    navigate("/invitation");
+  const handleInviteSubmit = async () => {
+    if (!inviteCode.trim()) {
+      setInviteError("초대코드를 입력해주세요");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setInviteError("");
+
+    // 초대코드 검증
+    const { data, error } = await supabase
+      .from("invite_codes")
+      .select("*")
+      .eq("code", inviteCode.trim())
+      .is("used_by", null)
+      .single();
+
+    if (error || !data) {
+      setInviteError("유효하지 않은 초대코드입니다");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 초대코드가 유효하면 초대 화면으로 이동
+    navigate("/invitation", { state: { inviteCode: data.code, roleFor: data.role_for } });
+    setIsSubmitting(false);
   };
 
   return (
@@ -135,6 +174,15 @@ export default function LoginScreen() {
             테스트3
           </button>
         </div>
+
+        {/* 초대코드 에러 메시지 */}
+        {inviteError && (
+          <div className="absolute bottom-[20px] left-0 w-full flex justify-center z-50">
+            <p className="px-4 py-2 bg-red-500/90 rounded-lg text-sm font-bold text-white shadow-sm font-['ONE_Mobile_POP_OTF:Regular',sans-serif]">
+              {inviteError}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

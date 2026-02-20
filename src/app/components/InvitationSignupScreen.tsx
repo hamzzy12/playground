@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/app/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 import imgImage20 from "figma:asset/03d18b0705eb33c048b11cf3194ca32f0d463be7.png";
 import imgImage14 from "figma:asset/6f18eead9b572899ad877ca3e47a89c821b19b36.png";
 import imgImage19 from "figma:asset/f3138f69f4a0667feabf1394df9cea9fc0ed336e.png";
@@ -24,12 +26,68 @@ function RelationshipButton({ className, onClick, value }: { className?: string;
 
 export default function InvitationSignupScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, updateProfile } = useAuth();
   const [showRelationshipModal, setShowRelationshipModal] = useState(false);
   const [showSignupComplete, setShowSignupComplete] = useState(false);
   const [relationship, setRelationship] = useState("");
   const [name, setName] = useState("");
+  const [signupError, setSignupError] = useState("");
 
-  const handleSignup = () => {
+  // 초대 정보 (LoginScreen에서 전달)
+  const inviteState = location.state as { inviteCode?: string; roleFor?: string } | null;
+
+  const handleSignup = async () => {
+    if (!name.trim()) {
+      setSignupError("이름을 입력해주세요");
+      return;
+    }
+    if (!relationship) {
+      setSignupError("관계를 선택해주세요");
+      return;
+    }
+
+    setSignupError("");
+
+    // 역할 결정: 초대코드의 role_for 기반 또는 기본 solo
+    const role = inviteState?.roleFor === "child" ? "child" as const
+      : inviteState?.roleFor === "parent" ? "parent" as const
+      : "solo" as const;
+
+    // 프로필 업데이트 (이미 Google 로그인으로 auth.users + profiles 생성됨)
+    if (user) {
+      await updateProfile({ name: name.trim(), role });
+
+      // 초대코드가 있으면 가족 관계 생성 + 코드 사용 처리
+      if (inviteState?.inviteCode) {
+        // 초대코드에서 생성자 정보 가져오기
+        const { data: codeData } = await supabase
+          .from("invite_codes")
+          .select("creator_id")
+          .eq("code", inviteState.inviteCode)
+          .single();
+
+        if (codeData) {
+          // 가족 관계 생성
+          const familyInsert = role === "child"
+            ? { parent_id: codeData.creator_id, child_id: user.id }
+            : { parent_id: user.id, child_id: codeData.creator_id };
+
+          const { data: familyData } = await supabase
+            .from("families")
+            .insert(familyInsert)
+            .select()
+            .single();
+
+          // 초대코드 사용 처리
+          await supabase
+            .from("invite_codes")
+            .update({ used_by: user.id, family_id: familyData?.id })
+            .eq("code", inviteState.inviteCode);
+        }
+      }
+    }
+
     setShowSignupComplete(true);
   };
 
@@ -97,9 +155,21 @@ export default function InvitationSignupScreen() {
           />
         )}
 
+        {signupError && (
+          <div className="absolute bottom-[60px] left-0 w-full flex justify-center z-50">
+            <p className="px-4 py-2 bg-red-500/90 rounded-lg text-sm font-bold text-white shadow-sm font-['ONE_Mobile_POP_OTF:Regular',sans-serif]">
+              {signupError}
+            </p>
+          </div>
+        )}
+
         {showSignupComplete && (
           <SignupCompletePopup
-            onConfirm={() => navigate("/home")}
+            onConfirm={() => {
+              const role = inviteState?.roleFor;
+              const route = role === "parent" ? "/parent-home" : role === "child" ? "/home" : "/solo-home";
+              navigate(route);
+            }}
           />
         )}
       </div>
