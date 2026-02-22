@@ -11,7 +11,7 @@ import RankingScreen from "@/app/components/RankingScreen";
 import SoloRankingScreen from "@/app/components/SoloRankingScreen";
 import ProductRefillPopup from "@/app/components/ProductRefillPopup";
 import ProductRewardPopup from "@/app/components/ProductRewardPopup";
-import MissionEditPopup from "@/app/components/MissionEditPopup";
+import MissionEditScreen from "@/app/components/MissionEditScreen";
 import ModeChangePopup from "@/app/components/ModeChangePopup";
 import GrowthReportScreen from "@/app/components/GrowthReportScreen";
 import ProtectedRoute from "@/app/components/ProtectedRoute";
@@ -37,9 +37,9 @@ export default function App() {
             <Route path="/mission-in-progress" element={<ProtectedRoute><InProgressMissionScreen /></ProtectedRoute>} />
             <Route path="/ranking" element={<ProtectedRoute><RankingScreen /></ProtectedRoute>} />
             <Route path="/solo-ranking" element={<ProtectedRoute><SoloRankingScreen /></ProtectedRoute>} />
+            <Route path="/mission-edit" element={<ProtectedRoute><MissionEditScreen /></ProtectedRoute>} />
             <Route path="/product-refill" element={<ProtectedRoute><ProductRefillPopup /></ProtectedRoute>} />
             <Route path="/product-reward" element={<ProtectedRoute><ProductRewardPopup /></ProtectedRoute>} />
-            <Route path="/mission-edit" element={<ProtectedRoute><MissionEditPopup initialTitle="" initialDescription="" initialReward={1} /></ProtectedRoute>} />
             <Route path="/growth-report" element={<ProtectedRoute><GrowthReportScreen /></ProtectedRoute>} />
             <Route path="/mode-change" element={<ProtectedRoute><div className="min-h-screen w-full flex justify-center bg-gray-100"><div className="bg-white h-[852px] relative w-[393px] overflow-hidden"><ModeChangePopup onClose={() => window.history.back()} /></div></div></ProtectedRoute>} />
           </Routes>

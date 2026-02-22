@@ -590,7 +590,7 @@ export default function HomeScreen() {
                     {/* 수정하기 Button */}
                     <div
                       className="absolute right-[15px] top-[10px] w-[80px] h-[40px] cursor-pointer active:scale-95 transition-transform"
-                      onClick={() => navigate('/mission-edit')}
+                      onClick={() => navigate('/mission-edit', { state: { missionId: mission.id, title: mission.title, description: mission.subtitle, reward: mission.reward } })}
                     >
                       <img alt="수정하기" className="w-full h-full object-cover" src={imgEditBtn} />
                     </div>

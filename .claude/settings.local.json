@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(while read hash msg)",
+      "Bash(do echo \"=== Commit: $msg ===\")",
+      "Bash(done)",
+      "Bash(grep:*)",
+      "Read(//tmp/**)",
+      "Bash(xargs basename:*)"
+    ],
+    "additionalDirectories": [
+      "/tmp",
+      "/Users/hamzzy/playground/src/assets"
+    ]
+  }
+}

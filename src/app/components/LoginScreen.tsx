@@ -159,19 +159,19 @@ export default function LoginScreen() {
             className="px-4 py-2 bg-white/80 rounded-lg text-sm font-bold shadow-sm hover:bg-white transition-colors"
             onClick={() => navigate("/home")}
           >
-            테스트1
+            아이
           </button>
           <button
             className="px-4 py-2 bg-white/80 rounded-lg text-sm font-bold shadow-sm hover:bg-white transition-colors"
             onClick={() => navigate("/parent-home")}
           >
-            테스트2
+            부모
           </button>
           <button
             className="px-4 py-2 bg-white/80 rounded-lg text-sm font-bold shadow-sm hover:bg-white transition-colors"
             onClick={() => navigate("/solo-home")}
           >
-            테스트3
+            나혼자
           </button>
         </div>
 
