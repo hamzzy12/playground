@@ -6,7 +6,12 @@
       "Bash(done)",
       "Bash(grep:*)",
       "Read(//tmp/**)",
-      "Bash(xargs basename:*)"
+      "Bash(xargs basename:*)",
+      "mcp__figma-desktop__get_metadata",
+      "mcp__figma-desktop__get_screenshot",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:)"
     ],
     "additionalDirectories": [
       "/tmp",
