@@ -166,9 +166,7 @@ export default function InvitationSignupScreen() {
         {showSignupComplete && (
           <SignupCompletePopup
             onConfirm={() => {
-              const role = inviteState?.roleFor;
-              const route = role === "parent" ? "/parent-home" : role === "child" ? "/home" : "/solo-home";
-              navigate(route);
+              navigate("/home");
             }}
           />
         )}

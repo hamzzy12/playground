@@ -18,14 +18,10 @@ export default function LoginScreen() {
   const [inviteError, setInviteError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 이미 로그인된 유저는 역할에 따라 자동 이동
+  // 이미 로그인된 유저는 홈으로 자동 이동
   useEffect(() => {
     if (!loading && user && profile) {
-      const route =
-        profile.role === "parent" ? "/parent-home" :
-        profile.role === "child" ? "/home" :
-        "/solo-home";
-      navigate(route, { replace: true });
+      navigate("/home", { replace: true });
     }
   }, [user, profile, loading, navigate]);
 
@@ -153,25 +149,13 @@ export default function LoginScreen() {
           <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={img11} />
         </div>
 
-        {/* Test Buttons */}
+        {/* Test Button */}
         <div className="absolute bottom-[20px] left-0 w-full flex justify-center gap-2 z-50">
           <button
             className="px-4 py-2 bg-white/80 rounded-lg text-sm font-bold shadow-sm hover:bg-white transition-colors"
             onClick={() => navigate("/home")}
           >
-            아이
-          </button>
-          <button
-            className="px-4 py-2 bg-white/80 rounded-lg text-sm font-bold shadow-sm hover:bg-white transition-colors"
-            onClick={() => navigate("/parent-home")}
-          >
-            부모
-          </button>
-          <button
-            className="px-4 py-2 bg-white/80 rounded-lg text-sm font-bold shadow-sm hover:bg-white transition-colors"
-            onClick={() => navigate("/solo-home")}
-          >
-            나혼자
+            홈으로 이동
           </button>
         </div>
 

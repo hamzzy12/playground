@@ -3,11 +3,10 @@ import { useAuth } from "@/app/context/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[];
 }
 
-export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, profile, loading } = useAuth();
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading } = useAuth();
 
   // 개발 환경에서는 인증 우회 (테스트 버튼용)
   if (import.meta.env.DEV) {
@@ -28,15 +27,6 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   // 로그인 안 되어 있으면 로그인 페이지로
   if (!user) {
     return <Navigate to="/" replace />;
-  }
-
-  // 역할 제한이 있고, 현재 유저 역할이 허용 목록에 없으면 홈으로
-  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
-    const homeRoute =
-      profile.role === "parent" ? "/parent-home" :
-      profile.role === "child" ? "/home" :
-      "/solo-home";
-    return <Navigate to={homeRoute} replace />;
   }
 
   return <>{children}</>;
