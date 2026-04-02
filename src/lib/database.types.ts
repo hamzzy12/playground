@@ -1,6 +1,5 @@
-export type MissionStatus = 'active' | 'in_progress' | 'gave_up' | 'challenge_success' | 'completed';
+export type MissionStatus = 'pending' | 'active' | 'in_progress' | 'gave_up' | 'challenge_success' | 'completed';
 export type MissionFrequency = '1회' | '매일' | '매주' | '매월';
-export type UserRole = 'parent' | 'child' | 'solo';
 export type ProductStatus = 'available' | 'soldout' | 'shipping' | 'delivered';
 
 export interface Database {
@@ -10,71 +9,80 @@ export interface Database {
         Row: {
           id: string;
           name: string;
-          role: UserRole;
           profile_img: string | null;
           border_color: string | null;
           coins: number;
+          group_id: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id: string;
           name: string;
-          role?: UserRole;
           profile_img?: string | null;
           border_color?: string | null;
           coins?: number;
+          group_id?: string | null;
         };
         Update: {
           name?: string;
-          role?: UserRole;
           profile_img?: string | null;
           border_color?: string | null;
           coins?: number;
+          group_id?: string | null;
         };
       };
-      families: {
+      groups: {
         Row: {
           id: string;
-          parent_id: string;
-          child_id: string;
+          name: string;
+          created_by: string;
           created_at: string;
         };
         Insert: {
-          parent_id: string;
-          child_id: string;
+          name: string;
+          created_by: string;
         };
         Update: {
-          parent_id?: string;
-          child_id?: string;
+          name?: string;
         };
+      };
+      group_members: {
+        Row: {
+          id: string;
+          group_id: string;
+          user_id: string;
+          joined_at: string;
+        };
+        Insert: {
+          group_id: string;
+          user_id: string;
+        };
+        Update: Record<string, never>;
       };
       invite_codes: {
         Row: {
           code: string;
           creator_id: string;
+          group_id: string;
           used_by: string | null;
-          role_for: 'parent' | 'child';
-          family_id: string | null;
           created_at: string;
         };
         Insert: {
           code: string;
           creator_id: string;
-          role_for: 'parent' | 'child';
-          family_id?: string | null;
+          group_id: string;
         };
         Update: {
           used_by?: string | null;
-          family_id?: string | null;
         };
       };
       missions: {
         Row: {
           id: string;
-          family_id: string | null;
-          creator_id: string;
-          assignee_id: string | null;
+          group_id: string | null;
+          proposer_id: string;
+          accepter_id: string | null;
           title: string;
           subtitle: string | null;
           reward: number;
@@ -87,9 +95,9 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
-          family_id?: string | null;
-          creator_id: string;
-          assignee_id?: string | null;
+          group_id?: string | null;
+          proposer_id: string;
+          accepter_id?: string | null;
           title: string;
           subtitle?: string | null;
           reward?: number;
@@ -108,13 +116,15 @@ export interface Database {
           due_date?: string | null;
           icon_src?: string | null;
           enabled?: boolean;
+          accepter_id?: string | null;
         };
       };
       products: {
         Row: {
           id: string;
-          family_id: string | null;
-          creator_id: string;
+          group_id: string | null;
+          seller_id: string;
+          buyer_id: string | null;
           title: string;
           coin_price: number;
           icon_src: string | null;
@@ -124,8 +134,8 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
-          family_id?: string | null;
-          creator_id: string;
+          group_id?: string | null;
+          seller_id: string;
           title: string;
           coin_price: number;
           icon_src?: string | null;
@@ -138,23 +148,7 @@ export interface Database {
           icon_src?: string | null;
           status?: ProductStatus;
           delivery_date?: string | null;
-        };
-      };
-      cheer_messages: {
-        Row: {
-          id: string;
-          family_id: string;
-          sender_id: string;
-          message: string;
-          created_at: string;
-        };
-        Insert: {
-          family_id: string;
-          sender_id: string;
-          message: string;
-        };
-        Update: {
-          message?: string;
+          buyer_id?: string | null;
         };
       };
     };

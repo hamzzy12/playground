@@ -42,6 +42,7 @@ export const MissionCard: React.FC<MissionCardProps> = ({
   const displayBarColor = status === 'active' ? barColor : statusColors.barColor;
 
   const buttonSrcMap: Record<MissionStatus, string> = {
+    pending: buttonSrc,
     active: buttonSrc,
     in_progress: inProgressButtonSrc,
     gave_up: gaveUpButtonSrc,

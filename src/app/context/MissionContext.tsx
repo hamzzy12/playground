@@ -34,8 +34,8 @@ function dbRowToMission(row: Record<string, unknown>): Mission {
     dueDate: row.due_date as string | undefined,
     iconSrc: row.icon_src as string | undefined,
     enabled: (row.enabled as boolean) ?? true,
-    creatorId: row.creator_id as string | undefined,
-    assigneeId: row.assignee_id as string | undefined,
+    creatorId: row.proposer_id as string | undefined,
+    assigneeId: row.accepter_id as string | undefined,
   };
 }
 
@@ -64,7 +64,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase
       .from("missions")
       .select("*")
-      .or(`creator_id.eq.${user.id},assignee_id.eq.${user.id}`)
+      .or(`proposer_id.eq.${user.id},accepter_id.eq.${user.id}`)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
@@ -78,7 +78,7 @@ export function MissionProvider({ children }: { children: ReactNode }) {
     fetchMissions();
   }, [fetchMissions]);
 
-  // Realtime 구독 (부모-자녀 간 실시간 동기화)
+  // Realtime 구독 (그룹 내 실시간 동기화)
   useEffect(() => {
     if (!user) return;
 
@@ -123,8 +123,8 @@ export function MissionProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     await supabase.from("missions").insert({
-      creator_id: user.id,
-      assignee_id: mission.assigneeId || user.id,
+      proposer_id: user.id,
+      accepter_id: mission.assigneeId || user.id,
       title: mission.title,
       subtitle: mission.subtitle,
       reward: mission.reward,

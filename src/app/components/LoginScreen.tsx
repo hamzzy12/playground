@@ -53,7 +53,7 @@ export default function LoginScreen() {
     }
 
     // 초대코드가 유효하면 초대 화면으로 이동
-    navigate("/invitation", { state: { inviteCode: data.code, roleFor: data.role_for } });
+    navigate("/invitation", { state: { inviteCode: data.code, groupId: data.group_id } });
     setIsSubmitting(false);
   };
 

@@ -1,4 +1,4 @@
-export type MissionStatus = 'active' | 'in_progress' | 'gave_up' | 'challenge_success' | 'completed';
+export type MissionStatus = 'pending' | 'active' | 'in_progress' | 'gave_up' | 'challenge_success' | 'completed';
 
 export type MissionFrequency = '1회' | '매일' | '매주' | '매월';
 
