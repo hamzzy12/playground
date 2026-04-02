@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useMissions, MISSION_STATUS_PRIORITY, MissionStatus } from "@/app/context/MissionContext";
+import { useTodayDate } from "@/app/hooks/useTodayDate";
+import { MissionCard } from "@/app/components/molecules/MissionCard";
+import { ShopItem } from "@/app/components/molecules/ShopItem";
 import MissionCompletePopup from "./MissionCompletePopup";
 import ExchangeConfirmPopup from "./ExchangeConfirmPopup";
 import SoldOutPopup from "./SoldOutPopup";
@@ -10,20 +13,9 @@ import ShippingPopup from "./ShippingPopup";
 import DeliveredPopup from "./DeliveredPopup";
 import DeveloperInfoPopup from "./DeveloperInfoPopup";
 import ProfileSelectModal from "./ProfileSelectModal";
-import imgRectangle31 from "figma:asset/508ac9b065db524ed603dc0378c5d78cbbf23ff5.png";
-import imgRectangle32 from "figma:asset/c64f822686c4bd0690d445a8f4dce0df3c0bba36.png";
-import imgRectangle33 from "figma:asset/5e78257806ea55fb5db8e29170f3f75d1554a882.png";
-import imgRectangle34 from "figma:asset/a5034f3978ced473b918a45d6f2940d377e84db2.png";
-
-const PROFILE_MAP: Record<string, string> = {
-  p1: imgRectangle31,
-  p2: imgRectangle33,
-  p3: imgRectangle34,
-  p4: imgRectangle32,
-};
+import { PROFILE_MAP } from "@/app/constants/profile";
 import svgPaths from "@/imports/svg-pjyub6r4mi";
 import svgPathsNew from "@/imports/svg-uurowocuep";
-import svgPathsExchange from "@/imports/svg-e1i3f271x4";
 import imgImage51 from "figma:asset/25e22a55b2742b552f58579327786ada9e64aa32.png";
 import imgImage90 from "figma:asset/33a8e1b3207d3e946a3d1319a80807089cbbc3fa.png";
 import imgImage34 from "figma:asset/1f04a42ee33275b3f150a4dc2ddde91b9839c383.png";
@@ -54,160 +46,11 @@ import imgEditBtn from "figma:asset/799e50dfe7b7023b5b89d5b87d6f541e8e517937.png
 import imgToggleOn from "figma:asset/53f85dfeb2f6b438582311a06991c630d2551111.svg";
 import imgToggleOff from "figma:asset/4c3c0360ff1b8b3b2e4a23e9fd5542b76ca16eab.svg";
 
-interface MissionCardProps {
-  bgColor: string;
-  barColor: string;
-  shadowColor: string;
-  title: string;
-  subtitle: string;
-  rewardText: string;
-  iconSrc: string;
-  buttonSrc: string;
-  inProgressButtonSrc: string;
-  gaveUpButtonSrc: string;
-  challengeSuccessButtonSrc: string;
-  completedButtonSrc: string;
-  svgPath: string;
-  status?: MissionStatus;
-  onButtonClick?: () => void;
-}
-
-const MissionCard = ({ bgColor, barColor, shadowColor, title, subtitle, rewardText, iconSrc, buttonSrc, inProgressButtonSrc, gaveUpButtonSrc, challengeSuccessButtonSrc, completedButtonSrc, svgPath, status = 'active', onButtonClick }: MissionCardProps) => {
-  let displayBgColor = bgColor;
-  let displayBarColor = barColor;
-  let displayButtonSrc = buttonSrc;
-
-  switch (status) {
-    case 'in_progress':
-      displayBgColor = '#f5eaf8';
-      displayBarColor = '#C07FE5';
-      displayButtonSrc = inProgressButtonSrc;
-      break;
-    case 'gave_up':
-      displayBgColor = '#f5e8e8';
-      displayBarColor = '#E57F7F';
-      displayButtonSrc = gaveUpButtonSrc;
-      break;
-    case 'challenge_success':
-      displayBgColor = '#e8f0f6';
-      displayBarColor = '#7FC0E5';
-      displayButtonSrc = challengeSuccessButtonSrc;
-      break;
-    case 'completed':
-      displayBgColor = '#e8f6ed';
-      displayBarColor = '#5EE2A0';
-      displayButtonSrc = completedButtonSrc;
-      break;
-  }
-
-  return (
-    <button
-      className="relative w-[361px] h-[146px] shrink-0 mx-auto mb-[15px] cursor-pointer active:scale-95 transition-transform rounded-[16px] overflow-hidden"
-      onClick={onButtonClick}
-    >
-      {/* Shadow */}
-      <div className="absolute inset-0 top-[6px] rounded-[16px]" style={{ backgroundColor: shadowColor }} />
-
-      {/* Main Background */}
-      <div className="absolute inset-0 rounded-[16px]" style={{ backgroundColor: displayBgColor }} />
-
-      {/* Bottom Bar */}
-      <div className="absolute left-0 bottom-0 w-[361px] h-[47px]">
-        <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 361 47">
-          <path d={svgPath} fill={displayBarColor} />
-        </svg>
-      </div>
-
-      {/* Content */}
-      <div className="absolute inset-0 pointer-events-none">
-         <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] bottom-[11px] left-0 w-full leading-[1.5] not-italic text-[18px] text-left pl-[25px] text-[#492607] whitespace-pre-wrap">
-          {rewardText}
-        </p>
-        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] top-[20px] left-[100px] leading-[1.5] not-italic text-[#492607] text-[20px] whitespace-pre-wrap">
-          {title}
-        </p>
-        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] top-[48px] left-[100px] leading-[1.5] not-italic text-[#492607] text-[20px] whitespace-pre-wrap">
-          {subtitle}
-        </p>
-
-        {/* Icon */}
-        <div className="absolute left-[25px] top-[15px] size-[66px]">
-          <img alt="icon" className="w-full h-full object-cover" src={iconSrc} />
-        </div>
-
-        {/* Status Button Image */}
-        <div className="absolute right-[10px] bottom-[10px] h-[56px] w-[142px]">
-           <img alt="button" className="w-full h-full object-contain" src={displayButtonSrc} />
-        </div>
-      </div>
-    </button>
-  );
-};
-
-interface ShopItemProps {
-  title: string;
-  price: string;
-  iconSrc: string;
-  status?: 'available' | 'soldout' | 'shipping' | 'delivered';
-  statusImageSrc?: string;
-  onClick?: () => void;
-}
-
-const ShopItem = ({ title, price, iconSrc, status = 'available', statusImageSrc, onClick }: ShopItemProps) => (
-  <button
-    className="relative w-[367px] h-[87px] shrink-0 mb-[16px] block text-left active:scale-95 transition-transform cursor-pointer rounded-[8px] overflow-hidden"
-    onClick={onClick}
-  >
-     <div className="absolute inset-0 top-[11px] bg-[#45270b] rounded-[8px]" />
-     <div className="absolute inset-0 h-[87px] bg-[#f2e1be] rounded-[8px]" />
-     
-     {/* Yellow Right Section (Price) */}
-     <div className="absolute right-0 top-0 w-[90px] h-[87px]">
-        <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 90 87">
-           <path d={svgPathsExchange.p68c9900} fill="#FFC100" />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-           <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#291608] leading-tight">칭찬코인</p>
-           <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[26px] text-[#291608] leading-tight">{price}</p>
-        </div>
-     </div>
-
-     {/* Icon */}
-     <div className="absolute left-[25px] top-[11px] size-[66px]">
-        <img className="w-full h-full object-cover" src={iconSrc} alt="Icon" />
-     </div>
-
-     {/* Title */}
-     <div className="absolute left-[100px] top-0 h-[87px] flex items-center">
-        <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[20px] text-[#291608]">{title}</p>
-     </div>
-
-     {/* Status Overlay */}
-     {status !== 'available' && statusImageSrc && (
-        <>
-            <div className="absolute inset-0 bg-black/70 rounded-[8px]" />
-            <div className="absolute left-[139px] top-[22px] w-[112px] h-[44px]">
-                <img src={statusImageSrc} className="w-full h-full object-contain" alt={status} />
-            </div>
-        </>
-     )}
-  </button>
-);
-
-// 오늘 날짜를 한국어 형식으로 포맷하는 함수
-const getTodayDateString = () => {
-  const today = new Date();
-  const month = today.getMonth() + 1;
-  const date = today.getDate();
-  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-  const day = dayNames[today.getDay()];
-  return `${month}월 ${date}일(${day}) 오늘의 미션`;
-};
-
 export default function HomeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, signOut } = useAuth();
+  const todayDateString = useTodayDate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
   const [missionSubTab, setMissionSubTab] = useState<'list' | 'manage'>('list');
@@ -524,7 +367,7 @@ export default function HomeScreen() {
             <div className="absolute top-[314px] left-[16px] w-[361px] h-[47px]">
               <div className="absolute bg-[#532807] inset-0 rounded-[8px]" />
               <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-white">
-                {getTodayDateString()}
+                {todayDateString}
               </p>
               <div className="absolute left-[13px] top-[10px] w-[31px] h-[26px]">
                  <img alt="" className="w-full h-full" src={imgImage45} />

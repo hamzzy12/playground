@@ -1,33 +1,12 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "./AuthContext";
+import type { Mission, MissionStatus } from "@/app/types/mission";
+import { getColorsForStatus } from "@/app/constants/mission";
 
-export type MissionStatus = 'active' | 'in_progress' | 'gave_up' | 'challenge_success' | 'completed';
-
-// 미션 상태별 정렬 우선순위 (낮을수록 위에 표시)
-export const MISSION_STATUS_PRIORITY: Record<MissionStatus, number> = {
-  'active': 1,           // 미진행
-  'in_progress': 2,      // 진행중
-  'gave_up': 3,          // 포기
-  'challenge_success': 4, // 도전성공
-  'completed': 5,        // 미션완료
-};
-
-export interface Mission {
-  id: string;
-  title: string;
-  subtitle: string;
-  reward: number;
-  bgColor: string;
-  barColor: string;
-  status: MissionStatus;
-  frequency?: '1회' | '매일' | '매주' | '매월';
-  dueDate?: string;
-  iconSrc?: string;
-  enabled?: boolean;
-  creatorId?: string;
-  assigneeId?: string;
-}
+// Re-export for backward compatibility (기존 import 유지)
+export type { Mission, MissionStatus } from "@/app/types/mission";
+export { MISSION_STATUS_PRIORITY } from "@/app/constants/mission";
 
 interface MissionContextType {
   missions: Mission[];
@@ -37,22 +16,6 @@ interface MissionContextType {
   updateMission: (id: string, updates: Partial<Pick<Mission, 'title' | 'subtitle' | 'reward' | 'frequency' | 'dueDate' | 'iconSrc'>>) => Promise<void>;
   deleteMission: (id: string) => Promise<void>;
   toggleMissionEnabled: (id: string, enabled: boolean) => Promise<void>;
-}
-
-// 상태에 따른 색상 매핑
-function getColorsForStatus(status: MissionStatus): { bgColor: string; barColor: string } {
-  switch (status) {
-    case 'in_progress':
-      return { bgColor: '#f5eaf8', barColor: '#C07FE5' };
-    case 'gave_up':
-      return { bgColor: '#f5e8e8', barColor: '#E57F7F' };
-    case 'challenge_success':
-      return { bgColor: '#e8f0f6', barColor: '#7FC0E5' };
-    case 'completed':
-      return { bgColor: '#e8f6ed', barColor: '#5EE2A0' };
-    default:
-      return { bgColor: '#f2e1be', barColor: '#FEB700' };
-  }
 }
 
 // DB row → Mission 객체 변환

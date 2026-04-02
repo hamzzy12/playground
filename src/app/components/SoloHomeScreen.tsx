@@ -7,6 +7,9 @@ import ModeChangePopup from "./ModeChangePopup";
 import MissionCompletePopup from "./MissionCompletePopup";
 import SoloMissionCompletePopup from "./SoloMissionCompletePopup";
 import { useMissions, MISSION_STATUS_PRIORITY, MissionStatus } from "@/app/context/MissionContext";
+import { useTodayDate } from "@/app/hooks/useTodayDate";
+import { TEXT_OUTLINE_3PX } from "@/app/constants/styles";
+import { MissionCard } from "@/app/components/molecules/MissionCard";
 import imgImage51 from "figma:asset/25e22a55b2742b552f58579327786ada9e64aa32.png";
 import imgImage92 from "figma:asset/40787136f6fb551d30f83647db8d86726e3ea97e.png";
 import imgImage52 from "figma:asset/c368e03333cec45fed8236b2ca94b1f8e78c82d4.png";
@@ -42,106 +45,12 @@ import imgShopPrice from "figma:asset/dc98638283e39420c57bbd4a6696268ee91b7adf.s
 import imgShopSoldout from "figma:asset/36c759c24a8ff334d106fa44da201597f8ea241b.svg";
 import svgPaths from "@/imports/svg-pjyub6r4mi";
 
-const textOutline3px = {
-  textShadow: `
-    -3px -3px 0 #45270B, 3px -3px 0 #45270B, -3px 3px 0 #45270B, 3px 3px 0 #45270B,
-    0 -3px 0 #45270B, 0 3px 0 #45270B, -3px 0 0 #45270B, 3px 0 0 #45270B,
-    -2px -3px 0 #45270B, 2px -3px 0 #45270B, -2px 3px 0 #45270B, 2px 3px 0 #45270B,
-    -3px -2px 0 #45270B, 3px -2px 0 #45270B, -3px 2px 0 #45270B, 3px 2px 0 #45270B
-  `,
-};
-
-// 오늘 날짜를 한국어 형식으로 포맷하는 함수
-const getTodayDateString = () => {
-  const today = new Date();
-  const month = today.getMonth() + 1;
-  const date = today.getDate();
-  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-  const day = dayNames[today.getDay()];
-  return `${month}월 ${date}일(${day}) 오늘의 미션`;
-};
-
-interface MissionCardProps {
-  bgColor: string;
-  barColor: string;
-  title: string;
-  subtitle: string;
-  rewardText: string;
-  iconSrc: string;
-  buttonSrc: string;
-  inProgressButtonSrc: string;
-  gaveUpButtonSrc: string;
-  challengeSuccessButtonSrc: string;
-  completedButtonSrc: string;
-  svgPath: string;
-  status?: MissionStatus;
-  onButtonClick?: () => void;
-}
-
-const SoloMissionCard = ({ bgColor, barColor, title, subtitle, rewardText, iconSrc, buttonSrc, inProgressButtonSrc, gaveUpButtonSrc, challengeSuccessButtonSrc, completedButtonSrc, svgPath, status = 'active', onButtonClick }: MissionCardProps) => {
-  let displayBgColor = bgColor;
-  let displayBarColor = barColor;
-  let displayButtonSrc = buttonSrc;
-
-  switch (status) {
-    case 'in_progress':
-      displayBgColor = '#f5eaf8';
-      displayBarColor = '#C07FE5';
-      displayButtonSrc = inProgressButtonSrc;
-      break;
-    case 'gave_up':
-      displayBgColor = '#f5e8e8';
-      displayBarColor = '#E57F7F';
-      displayButtonSrc = gaveUpButtonSrc;
-      break;
-    case 'challenge_success':
-      displayBgColor = '#e8f0f6';
-      displayBarColor = '#7FC0E5';
-      displayButtonSrc = challengeSuccessButtonSrc;
-      break;
-    case 'completed':
-      displayBgColor = '#e8f6ed';
-      displayBarColor = '#5EE2A0';
-      displayButtonSrc = completedButtonSrc;
-      break;
-  }
-
-  return (
-    <button
-      className="relative w-[361px] h-[146px] shrink-0 mx-auto mb-[15px] cursor-pointer active:scale-95 transition-transform rounded-[16px] overflow-hidden"
-      onClick={onButtonClick}
-    >
-      <div className="absolute inset-0 top-[6px] rounded-[16px] bg-[#45270b]" />
-      <div className="absolute inset-0 rounded-[16px]" style={{ backgroundColor: displayBgColor }} />
-      <div className="absolute left-0 bottom-0 w-[361px] h-[47px]">
-        <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 361 47">
-          <path d={svgPath} fill={displayBarColor} />
-        </svg>
-      </div>
-      <div className="absolute inset-0 pointer-events-none">
-        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] bottom-[11px] left-0 w-full leading-[1.5] not-italic text-[18px] text-left pl-[25px] text-[#492607] whitespace-pre-wrap">
-          {rewardText}
-        </p>
-        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] top-[20px] left-[100px] leading-[1.5] not-italic text-[#492607] text-[20px] whitespace-pre-wrap">
-          {title}
-        </p>
-        <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] top-[48px] left-[100px] leading-[1.5] not-italic text-[#492607] text-[20px] whitespace-pre-wrap">
-          {subtitle}
-        </p>
-        <div className="absolute left-[25px] top-[15px] size-[66px]">
-          <img alt="icon" className="w-full h-full object-cover" src={iconSrc} />
-        </div>
-        <div className="absolute right-[10px] bottom-[10px] h-[56px] w-[142px]">
-          <img alt="button" className="w-full h-full object-contain" src={displayButtonSrc} />
-        </div>
-      </div>
-    </button>
-  );
-};
+const textOutline3px = TEXT_OUTLINE_3PX;
 
 export default function SoloHomeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
+  const todayDateString = useTodayDate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeveloperPopup, setShowDeveloperPopup] = useState(false);
   const [showModeChangePopup, setShowModeChangePopup] = useState(false);
@@ -431,7 +340,7 @@ export default function SoloHomeScreen() {
               <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgImage45} />
             </div>
             <p className="absolute font-['ONE_Mobile_POP_OTF:Regular',sans-serif] left-[16px] top-[314px] w-[361px] h-[47px] flex items-center justify-center leading-[1.5] text-[18px] text-center text-white">
-              {getTodayDateString()}
+              {todayDateString}
             </p>
           </>
         )}
@@ -443,7 +352,8 @@ export default function SoloHomeScreen() {
               .map(id => missions.find(m => m.id === id))
               .filter((mission): mission is typeof missions[0] => mission !== undefined)
               .map(mission => (
-              <SoloMissionCard
+              <MissionCard
+                shadowColor="#45270b"
                 key={mission.id}
                 bgColor={mission.bgColor}
                 barColor={mission.barColor}
