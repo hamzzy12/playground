@@ -22,19 +22,30 @@
 - **라우팅**: React Router DOM
 - **백엔드**: Supabase (인증, DB, Realtime)
 - **애니메이션**: Motion (Framer Motion)
-- **UI 컴포넌트**: Radix UI, shadcn/ui
+- **UI 컴포넌트**: Radix UI
 
-## 프로젝트 구조
+## 프로젝트 구조 (Atomic Design)
 
 ```
 src/
 ├── app/
 │   ├── App.tsx              # 라우터 설정
-│   ├── components/          # 화면 및 UI 컴포넌트
-│   └── context/             # React Context (Auth, Mission 등)
-├── imports/                 # Figma에서 내보낸 컴포넌트
-├── assets/                  # 이미지 에셋 (PNG)
-└── styles/                  # CSS 스타일
+│   ├── components/
+│   │   ├── atoms/           # 최소 단위 UI (버튼, 토글, 배지)
+│   │   ├── molecules/       # 단일 기능 (MissionCard, ShopItem)
+│   │   ├── organisms/       # 독립 UI 영역 (MissionList, NavigationBar)
+│   │   ├── templates/       # 레이아웃 골격
+│   │   ├── pages/           # 라우트 매핑 화면
+│   │   └── *.tsx            # 기존 화면 컴포넌트 (점진적 이동 중)
+│   ├── context/             # React Context (Auth, Mission)
+│   ├── hooks/               # Custom Hooks (useTodayDate, useMissionSort)
+│   ├── constants/           # 상수 (미션 색상, 프로필 맵)
+│   ├── services/            # Supabase 서비스 레이어
+│   └── types/               # 공유 TypeScript 타입
+├── lib/                     # 외부 라이브러리 초기화 (supabase.ts)
+├── imports/                 # Figma 컴포넌트 + SVG 경로
+├── assets/                  # 이미지 에셋 (PNG/SVG)
+└── styles/                  # 글로벌 CSS
 ```
 
 ## 사용자 플로우
