@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
-import { useAuth } from "@/app/context/AuthContext";
-import { useMissions, MISSION_STATUS_PRIORITY, MissionStatus } from "@/app/context/MissionContext";
+import { useAuthStore, useProfileStore, useMissionStore } from "@/app/stores";
+import { MISSION_STATUS_PRIORITY } from "@/app/constants/mission";
+import type { MissionStatus } from "@/app/types/mission";
 import { useTodayDate } from "@/app/hooks/useTodayDate";
 import { MissionCard } from "@/app/components/molecules/MissionCard";
 import { ShopItem } from "@/app/components/molecules/ShopItem";
@@ -49,7 +50,8 @@ import imgToggleOff from "figma:asset/4c3c0360ff1b8b3b2e4a23e9fd5542b76ca16eab.s
 export default function HomeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const profile = useProfileStore((s) => s.profile);
+  const signOut = useAuthStore((s) => s.signOut);
   const todayDateString = useTodayDate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mission' | 'shop'>('mission');
@@ -70,8 +72,9 @@ export default function HomeScreen() {
   const [selectedProfileImg, setSelectedProfileImg] = useState<string | null>(null);
   const [selectedBorderColor, setSelectedBorderColor] = useState<string | null>(null);
 
-  // Context에서 미션 상태 가져오기
-  const { missions, updateMissionStatus } = useMissions();
+  // 미션 스토어에서 가져오기
+  const missions = useMissionStore((s) => s.missions);
+  const updateMissionStatus = useMissionStore((s) => s.updateStatus);
 
   // 미션 목록이 변경되면 정렬된 순서 갱신
   useEffect(() => {

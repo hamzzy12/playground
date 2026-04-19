@@ -8,7 +8,7 @@ import WeekdaySelector from "@/imports/WeekdaySelector";
 import MonthlySelector, { WeeklySchedule } from "@/imports/MonthlySelector";
 import MissionCreatedAlert from "./MissionCreatedAlert";
 import IconSelectModal from "./IconSelectModal";
-import { useMissions } from "@/app/context/MissionContext";
+import { useAuthStore, useMissionStore } from "@/app/stores";
 
 type FrequencyType = '1회' | '매일' | '매주' | '매월';
 type WeekType = '첫째주' | '둘째주' | '셋째주' | '넷째주';
@@ -18,7 +18,8 @@ export default function MissionProposeScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const fromManage = (location.state as { from?: string } | null)?.from === 'home-manage';
-  const { addMission } = useMissions();
+  const userId = useAuthStore((s) => s.user?.id);
+  const addMission = useMissionStore((s) => s.add);
   const [selectedFrequency, setSelectedFrequency] = useState<FrequencyType>('1회');
   const [missionContent, setMissionContent] = useState('');
   const [additionalContent, setAdditionalContent] = useState('');
@@ -61,8 +62,13 @@ export default function MissionProposeScreen() {
       return;
     }
 
+    if (!userId) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
     // 미션 추가
-    addMission({
+    addMission(userId, {
       title: missionContent,
       subtitle: additionalContent || '미션을 완료해보세요!',
       reward: parseInt(rewardCoins),

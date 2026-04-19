@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/app/context/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { useAuthStore, useProfileStore } from "@/app/stores";
+import { inviteCodeService, groupService } from "@/app/services";
 import imgImage20 from "figma:asset/03d18b0705eb33c048b11cf3194ca32f0d463be7.png";
 import imgImage14 from "figma:asset/6f18eead9b572899ad877ca3e47a89c821b19b36.png";
 import imgImage19 from "figma:asset/f3138f69f4a0667feabf1394df9cea9fc0ed336e.png";
@@ -27,7 +27,8 @@ function RelationshipButton({ className, onClick, value }: { className?: string;
 export default function InvitationSignupScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, updateProfile } = useAuth();
+  const user = useAuthStore((s) => s.user);
+  const updateProfile = useProfileStore((s) => s.update);
   const [showRelationshipModal, setShowRelationshipModal] = useState(false);
   const [showSignupComplete, setShowSignupComplete] = useState(false);
   const [relationship, setRelationship] = useState("");
@@ -51,32 +52,15 @@ export default function InvitationSignupScreen() {
 
     // 프로필 업데이트 (이미 Google 로그인으로 auth.users + profiles 생성됨)
     if (user) {
-      await updateProfile({ name: name.trim() });
+      await updateProfile(user.id, { name: name.trim() });
 
       // 초대코드가 있으면 그룹 합류 + 코드 사용 처리
       if (inviteState?.inviteCode) {
-        const { data: codeData } = await supabase
-          .from("invite_codes")
-          .select("creator_id, group_id")
-          .eq("code", inviteState.inviteCode)
-          .single();
-
-        if (codeData) {
-          // 그룹 멤버로 추가
-          if (codeData.group_id) {
-            await supabase
-              .from("group_members")
-              .insert({ group_id: codeData.group_id, user_id: user.id });
-
-            // 프로필에 그룹 ID 저장
-            await updateProfile({ group_id: codeData.group_id });
-          }
-
-          // 초대코드 사용 처리
-          await supabase
-            .from("invite_codes")
-            .update({ used_by: user.id })
-            .eq("code", inviteState.inviteCode);
+        const codeData = await inviteCodeService.validate(inviteState.inviteCode);
+        if (codeData?.group_id) {
+          await groupService.addMember(codeData.group_id, user.id);
+          await updateProfile(user.id, { group_id: codeData.group_id });
+          await inviteCodeService.markUsed(inviteState.inviteCode, user.id);
         }
       }
     }
