@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useMissions } from "@/app/context/MissionContext";
+import { useMissionStore } from "@/app/stores";
 import MissionEditPopup from "./MissionEditPopup";
 
 interface MissionEditState {
@@ -12,7 +12,8 @@ interface MissionEditState {
 export default function MissionEditScreen() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { updateMission, deleteMission } = useMissions();
+  const updateMission = useMissionStore((s) => s.update);
+  const deleteMission = useMissionStore((s) => s.remove);
   const state = location.state as MissionEditState | null;
 
   return (

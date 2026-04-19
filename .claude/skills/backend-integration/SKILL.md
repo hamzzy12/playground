@@ -1,317 +1,251 @@
 ---
 name: backend-integration
-description: 미션놀이터 백엔드 통합 가이드. Supabase 서비스 레이어 패턴, 에셋 관리(배럴 파일), database.types.ts 관리, Realtime 구독 규칙을 정의. 백엔드 연동 코드 작성 시 참고.
+description: 미션놀이터 백엔드 통합 가이드. Supabase 서비스 레이어, Zustand 스토어, database.types.ts, Realtime 구독 규칙을 정의. 백엔드 연동 코드 작성 시 참고.
 user-invocable: true
 disable-model-invocation: false
 ---
 
-# 백엔드 통합 및 에셋 관리 가이드
+# 백엔드 통합 가이드
 
-Supabase 백엔드 연동, 데이터 타입 관리, 에셋 관리 규칙.
+Supabase 백엔드 연동, Zustand 상태 관리, 데이터 타입/에셋 관리 규칙.
 
 ---
 
-## 1. 서비스 레이어 패턴
-
-### 원칙
-**컴포넌트에서 Supabase 직접 호출 금지.** 모든 DB 접근은 서비스 레이어를 통한다.
+## 1. 데이터 흐름
 
 ```
-컴포넌트 → Context → Service → Supabase
+컴포넌트 → Store(Zustand) → Service → Supabase
+              ↑
+           Realtime 구독 → Store 갱신
 ```
+
+- **컴포넌트**: Store hook으로 상태 구독, action 호출
+- **Store**: 상태 보관 + Service 호출 + 낙관적 업데이트
+- **Service**: Supabase 호출 + DB Row ↔ 앱 모델 변환
+- **컴포넌트에서 supabase 직접 호출 금지** (Service만 사용)
+
+---
+
+## 2. Service 레이어
+
+### 폴더 구조 (실제)
+```
+src/app/services/
+├── authService.ts        # supabase.auth.* (세션, OAuth, signOut, onAuthStateChange)
+├── profileService.ts     # profiles 테이블
+├── missionService.ts     # missions 테이블 + Realtime 헬퍼
+├── inviteCodeService.ts  # invite_codes 테이블
+├── groupService.ts       # group_members 테이블
+└── index.ts              # 배럴 export
+```
+
+### 작성 규칙
+- 파일 1개 = 테이블 또는 도메인 1개
+- 함수는 `Promise<T>` 반환 타입 명시
+- 에러는 `console.error`로 로깅 후 `null`/빈 배열/`void` 반환 (호출 측이 분기 처리)
+- DB Row → 앱 모델 변환은 같은 파일의 private 함수(`rowToMission` 등)에서 처리
+- React 훅/상태 사용 금지 (순수 함수)
+
+```ts
+// services/missionService.ts (요약)
+import { supabase } from "@/lib/supabase";
+import type { Mission } from "@/app/types/mission";
+
+interface MissionRow { /* DB shape */ }
+function rowToMission(row: MissionRow): Mission { /* 변환 */ }
+
+export const missionService = {
+  async fetchByUser(userId: string): Promise<Mission[]> { ... },
+  async create(input: MissionCreateInput): Promise<void> { ... },
+  subscribeToChanges(callback: () => void): () => void { ... },
+};
+```
+
+---
+
+## 3. Zustand 스토어
 
 ### 폴더 구조
 ```
-src/app/services/
-├── authService.ts       # 인증, 초대코드 검증
-├── missionService.ts    # 미션 CRUD
-├── groupService.ts      # 그룹 생성, 멤버 관리
-└── productService.ts    # 상품 CRUD
+src/app/stores/
+├── authStore.ts      # user, session, loading, signInWithGoogle, signOut + initAuth()
+├── profileStore.ts   # profile, fetch, update, clear
+├── missionStore.ts   # missions, fetch/add/update/remove + subscribeMissions()
+└── index.ts          # 배럴 export
 ```
 
-### 서비스 파일 작성 규칙
+### 분리 기준
+**Supabase API 단위로 분리**.
+- `authStore` ↔ `supabase.auth.*`
+- `profileStore` ↔ `supabase.from('profiles')`
+- `missionStore` ↔ `supabase.from('missions')`
+
+API가 다르면 상태도 분리, 같은 테이블 작업이면 한 스토어로.
+
+### 작성 규칙
+- 스토어는 Service 호출만 (Supabase 직접 호출 금지)
+- 상태 변경은 `set(...)`로, 다른 store 참조는 `useOtherStore.getState()`
+- 낙관적 업데이트(`updateStatus` 등)는 `set` 먼저 → Service 호출
+- Realtime/세션 구독은 Hook이 아닌 별도 함수(`initAuth`, `subscribeMissions`)로 노출
+
+```ts
+// stores/missionStore.ts (요약)
+export const useMissionStore = create<MissionState>((set, get) => ({
+  missions: [],
+  fetch: async (userId) => {
+    const missions = await missionService.fetchByUser(userId);
+    set({ missions });
+  },
+  updateStatus: async (id, status) => {
+    set((s) => ({ missions: s.missions.map(...) })); // 낙관적
+    await missionService.updateStatus(id, status);
+  },
+  ...
+}));
+
+export function subscribeMissions(userId: string): () => void {
+  return missionService.subscribeToChanges(() => {
+    useMissionStore.getState().fetch(userId);
+  });
+}
+```
+
+### 컴포넌트 사용
+```tsx
+// selector 형태로 필요한 부분만 구독 → 불필요한 리렌더 방지
+const user = useAuthStore((s) => s.user);
+const profile = useProfileStore((s) => s.profile);
+const missions = useMissionStore((s) => s.missions);
+```
+
+---
+
+## 4. 초기화 / 생애주기
+
+`App.tsx`의 `AppInitializer` 컴포넌트가 담당:
 
 ```tsx
-// services/missionService.ts
-import { supabase } from "@/lib/supabase";
-import type { Mission, MissionStatus } from "@/app/types/mission";
+function AppInitializer({ children }) {
+  const userId = useAuthStore((s) => s.user?.id);
 
-export const missionService = {
-  async fetchByGroup(groupId: string): Promise<Mission[]> {
-    const { data, error } = await supabase
-      .from("missions")
-      .select("*")
-      .eq("group_id", groupId)
-      .order("created_at", { ascending: false });
+  // 1. 세션 복원 + auth 변경 구독 (앱 1회)
+  useEffect(() => initAuth(), []);
 
-    if (error) throw error;
-    return data.map(transformMissionRow);
-  },
+  // 2. user 변경 시 profile / missions fetch + Realtime 구독
+  useEffect(() => {
+    if (userId) {
+      useProfileStore.getState().fetch(userId);
+      useMissionStore.getState().fetch(userId);
+      return subscribeMissions(userId);
+    }
+    useProfileStore.getState().clear();
+    useMissionStore.getState().clear();
+  }, [userId]);
 
-  async create(mission: Omit<Mission, "id" | "created_at">): Promise<Mission> {
-    const { data, error } = await supabase
-      .from("missions")
-      .insert(mission)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return transformMissionRow(data);
-  },
-
-  async updateStatus(id: string, status: MissionStatus): Promise<void> {
-    const { error } = await supabase
-      .from("missions")
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", id);
-
-    if (error) throw error;
-  },
-
-  async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from("missions")
-      .delete()
-      .eq("id", id);
-
-    if (error) throw error;
-  },
-};
+  return children;
+}
 ```
+
+원칙: **세션은 즉시 확정(loading=false), profile/missions는 비동기 로드.** 프로필 조회 지연/실패가 앱 진입을 막지 않음.
+
+---
+
+## 5. Realtime 구독
+
+### 현재 구현
+- `missions` 테이블 전체 구독 (필터 없음)
+- 변경 발생 시 `useMissionStore.fetch(userId)`로 전체 재조회
+- RLS 정책이 그룹 외 row를 차단 (데이터 누출 없음)
+
+### 미구현 / 개선 목표
+- 그룹 단위 필터링: `filter: group_id=eq.${myGroupId}`로 좁히기
+- 부분 업데이트(insert/update/delete payload 활용)로 fetch 줄이기
 
 ### 규칙
-- 각 서비스는 하나의 도메인 담당
-- 반환 타입 명시 (Promise<T>)
-- 에러는 throw하고, Context에서 catch
-- DB 행(row) → 앱 모델 변환은 서비스 내 `transform` 함수에서 처리
-- 서비스는 순수 함수 — React 훅/상태 사용 금지
+- 구독은 Service의 `subscribeToChanges` 헬퍼만 사용
+- `App.tsx` 초기화 외에서 직접 `supabase.channel()` 호출 금지
+- cleanup(`unsubscribe`)은 반드시 반환
 
 ---
 
-## 2. Context와 서비스의 역할 분리
-
-### Context 역할
-- 서비스 호출 + 결과 캐싱
-- 낙관적 업데이트 (Optimistic Update)
-- Realtime 구독 관리
-- 로딩/에러 상태 관리
-- 컴포넌트에 데이터 제공
-
-### 서비스 역할
-- Supabase 쿼리 실행
-- DB 행 ↔ 앱 모델 변환
-- 에러 발생 시 throw
-
-```tsx
-// context/MissionContext.tsx
-import { missionService } from "@/app/services/missionService";
-
-const fetchMissions = async () => {
-  try {
-    setLoading(true);
-    const data = await missionService.fetchByGroup(groupId);
-    setMissions(data);
-  } catch (error) {
-    console.error("Failed to fetch missions:", error);
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
----
-
-## 3. Realtime 구독 패턴
-
-### 기본 패턴
-```tsx
-// Context 내부에서 구독
-useEffect(() => {
-  const channel = supabase
-    .channel("missions-changes")
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "missions",
-        filter: `group_id=eq.${groupId}`,
-      },
-      () => fetchMissions()
-    )
-    .subscribe();
-
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [groupId]);
-```
-
-### 규칙
-- 구독은 Context에서만 (컴포넌트에서 직접 구독 금지)
-- `filter`로 필요한 데이터만 구독 (그룹 범위)
-- cleanup 함수에서 반드시 `removeChannel`
-- 변경 감지 시 전체 재조회 (`fetchMissions()`) — 부분 업데이트보다 안전
-
----
-
-## 4. database.types.ts 관리
+## 6. database.types.ts
 
 ### 위치
 `src/lib/database.types.ts`
 
 ### 역할
-- Supabase 테이블 스키마의 TypeScript 표현
-- 서비스 레이어에서 직접 참조
-- 앱 모델 타입(`src/app/types/`)과 분리
-
-### 구조
-```tsx
-// lib/database.types.ts — DB 스키마 그대로
-export interface Database {
-  public: {
-    Tables: {
-      profiles: { Row: { ... }; Insert: { ... }; Update: { ... } };
-      missions: { Row: { ... }; Insert: { ... }; Update: { ... } };
-      groups: { Row: { ... }; Insert: { ... }; Update: { ... } };
-      // ...
-    };
-  };
-}
-```
-
-```tsx
-// app/types/mission.ts — 앱에서 사용하는 모델
-export interface Mission {
-  id: string;
-  title: string;
-  // ... DB 컬럼과 다를 수 있음 (camelCase, 추가 필드 등)
-}
-```
+- DB 스키마의 TypeScript 표현 (Service에서 참조)
+- 앱 모델(`src/app/types/`)과 분리
 
 ### 규칙
-- DB 타입은 Supabase CLI로 자동 생성 (`supabase gen types typescript`)
-- 수동 수정 최소화 — 스키마 변경 시 재생성
-- 앱 모델 타입은 `src/app/types/`에 별도 관리
-- 서비스의 `transform` 함수가 DB Row → 앱 모델 변환 담당
+- DB 컬럼은 `snake_case`, 앱 모델은 `camelCase`로 매핑
+- 매핑은 Service의 `rowToXxx` 함수에서 수행
+- 스키마 변경 시 `supabase/schema.sql`도 같이 갱신
+
+### 컬럼 ↔ 앱 모델 명명 차이 (예시)
+| DB 컬럼 | 앱 모델 필드 | 비고 |
+|---|---|---|
+| `coins` | `coins` | "포인트"는 UI 표시 용어, DB/모델은 `coins`로 통일 |
+| `proposer_id` / `accepter_id` | `creatorId` / `assigneeId` | Mission 모델 호환성 |
+| `seller_id` / `buyer_id` | (사용 시 매핑) | products |
 
 ---
 
-## 5. 에셋 관리
+## 7. Supabase 보조 함수
 
-### 디렉토리 구조
-```
-src/assets/
-├── index.ts             # 배럴 파일 (해시명 → 의미 있는 이름)
-├── [hash].png           # Figma에서 내보낸 원본 파일
-└── [hash].svg
-```
+스키마(`supabase/schema.sql`)에 정의된 RLS 보조 함수:
 
-### 배럴 파일 (index.ts)
-해시 기반 파일명을 의미 있는 이름으로 매핑:
+- `is_group_member(group_id UUID) RETURNS BOOLEAN` (`SECURITY DEFINER`)
+  - `group_members` 정책이 자기 자신을 참조할 때 발생하는 RLS 무한재귀를 방지
+  - 새 RLS 정책 작성 시 `EXISTS (SELECT 1 FROM group_members ...)` 대신 `public.is_group_member(group_id)` 사용
 
-```tsx
-// assets/index.ts
-export { default as imgCoin } from "figma:asset/4e34cf3a...png";
-export { default as imgMissionComplete } from "figma:asset/7d773474...png";
-export { default as imgTabMission } from "figma:asset/917899768...svg";
-export { default as imgTabShop } from "figma:asset/5e41aca0...svg";
-```
-
-### 컴포넌트에서 사용
-```tsx
-// Good — 배럴 파일에서 의미 있는 이름으로 import
-import { imgCoin, imgMissionComplete } from "@/assets";
-
-// Bad — 해시명 직접 import
-import imgImage12 from "figma:asset/7d773474cf8d2e22025ba48c1015d38f36885283.png";
-```
-
-### 규칙
-- 새 에셋 추가 시 반드시 `assets/index.ts`에 등록
-- 이름은 `img` 접두사 + 용도: `imgCoin`, `imgProfileDefault`, `imgMissionBg`
-- 사용하지 않는 에셋은 주기적으로 정리
-- SVG 경로 파일(`src/imports/svg-*.ts`)도 의미 있는 이름으로 관리
-
-### Vite 설정
-```tsx
-// vite.config.ts
-resolve: {
-  alias: {
-    "@": path.resolve(__dirname, "./src"),
-    "figma:asset": path.resolve(__dirname, "./src/assets"),
-  },
-}
-```
+### 뷰
+- `ranking_view`: profiles + 완료된 missions 집계 (랭킹용)
+  - 컬럼: `id`, `name`, `profile_img`, `border_color`, `completed_count`
 
 ---
 
-## 6. 환경 변수
+## 8. 환경 변수
 
 ### 파일
-- `.env` — 로컬 개발용 (git 추적 안 함)
-- `.env.example` — 키 목록만 (값 없이)
+- `.env` — 로컬 (gitignore)
+- `.env.example` — 키 목록 템플릿
 
 ### 필수 변수
 ```
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbG...
-```
-
-### 접근
-```tsx
-// lib/supabase.ts에서만 환경 변수 접근
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<publishable key>  # sb_publishable_...
 ```
 
 ### 규칙
-- `VITE_` 접두사 필수 (Vite 클라이언트 노출)
-- 컴포넌트에서 `import.meta.env` 직접 접근 금지 — `lib/` 또는 `services/`에서만
-- 비밀 키는 클라이언트에 노출하지 않음 (anon key만 사용)
+- `VITE_` 접두사 필수 (Vite가 클라이언트 번들에 포함)
+- **Secret key 사용 금지** — 브라우저에 노출되면 RLS 우회 가능
+- `lib/supabase.ts`에서만 `import.meta.env` 접근
 
 ---
 
-## 7. 에러 처리 패턴
+## 9. 에셋 관리
 
-### 서비스 레이어
-```tsx
-// 에러를 throw — Context에서 처리
-async fetchByGroup(groupId: string): Promise<Mission[]> {
-  const { data, error } = await supabase.from("missions").select("*").eq("group_id", groupId);
-  if (error) throw error;
-  return data.map(transformMissionRow);
-}
+### 디렉토리
+```
+src/assets/
+├── [hash].png|svg    # Figma export 원본
+└── (배럴 파일은 아직 미도입)
 ```
 
-### Context 레이어
+### 컴포넌트 import (현재)
 ```tsx
-// try/catch로 처리, 상태 업데이트
-const fetchMissions = async () => {
-  try {
-    const data = await missionService.fetchByGroup(groupId);
-    setMissions(data);
-    setError(null);
-  } catch (err) {
-    console.error("Failed to fetch missions:", err);
-    setError("미션을 불러올 수 없습니다.");
-  }
-};
+import imgCoin from "figma:asset/4e34cf3a...png";
 ```
 
-### 낙관적 업데이트
-```tsx
-const updateMissionStatus = async (id: string, status: MissionStatus) => {
-  // 1. 즉시 UI 반영
-  setMissions(prev => prev.map(m => m.id === id ? { ...m, status } : m));
+### 개선 목표 (미도입)
+의미 있는 이름으로 매핑하는 `src/assets/index.ts` 배럴 파일.
 
-  try {
-    // 2. 서버에 반영
-    await missionService.updateStatus(id, status);
-  } catch (err) {
-    // 3. 실패 시 롤백
-    await fetchMissions();
-    console.error("Failed to update mission status:", err);
-  }
-};
+```tsx
+// 목표
+import { imgCoin, imgMissionComplete } from "@/assets";
 ```
+
+### Vite 별칭 (`vite.config.ts`)
+- `@/` → `src/`
+- `figma:asset/` → `src/assets/`

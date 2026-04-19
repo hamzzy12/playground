@@ -1,17 +1,13 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/app/context/AuthContext";
+import { useAuthStore } from "@/app/stores";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
-
-  // 개발 환경에서는 인증 우회 (테스트 버튼용)
-  if (import.meta.env.DEV) {
-    return <>{children}</>;
-  }
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
 
   // 로딩 중일 때 빈 화면 (깜빡임 방지)
   if (loading) {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/app/context/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/app/stores";
+import { inviteCodeService } from "@/app/services";
 import imgImage12 from "figma:asset/7d773474cf8d2e22025ba48c1015d38f36885283.png";
 import imgImage11 from "figma:asset/39fca110c4e2513bc4a56a1e748ae427b6bc63b0.png";
 import imgImage8 from "figma:asset/f96f017455e91698c320ac65818a05031a68a0b9.png";
@@ -13,17 +13,19 @@ import img11 from "figma:asset/090d51aa33f49cc631bc92b3dd3fcf328050d0bb.png";
 
 export default function LoginScreen() {
   const navigate = useNavigate();
-  const { user, profile, signInWithGoogle, loading } = useAuth();
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
   const [inviteCode, setInviteCode] = useState("");
   const [inviteError, setInviteError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 이미 로그인된 유저는 홈으로 자동 이동
+  // 이미 로그인된 유저는 홈으로 자동 이동 (profile 로드와 무관하게 즉시)
   useEffect(() => {
-    if (!loading && user && profile) {
+    if (!loading && user) {
       navigate("/home", { replace: true });
     }
-  }, [user, profile, loading, navigate]);
+  }, [user, loading, navigate]);
 
   const handleGoogleLogin = async () => {
     await signInWithGoogle();
@@ -38,21 +40,13 @@ export default function LoginScreen() {
     setIsSubmitting(true);
     setInviteError("");
 
-    // 초대코드 검증
-    const { data, error } = await supabase
-      .from("invite_codes")
-      .select("*")
-      .eq("code", inviteCode.trim())
-      .is("used_by", null)
-      .single();
-
-    if (error || !data) {
+    const data = await inviteCodeService.validate(inviteCode);
+    if (!data) {
       setInviteError("유효하지 않은 초대코드입니다");
       setIsSubmitting(false);
       return;
     }
 
-    // 초대코드가 유효하면 초대 화면으로 이동
     navigate("/invitation", { state: { inviteCode: data.code, groupId: data.group_id } });
     setIsSubmitting(false);
   };
@@ -147,16 +141,6 @@ export default function LoginScreen() {
         </div>
         <div className="absolute h-[88px] left-[266px] top-[297px] w-[91px] z-20" data-name="1 1">
           <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={img11} />
-        </div>
-
-        {/* Test Button */}
-        <div className="absolute bottom-[20px] left-0 w-full flex justify-center gap-2 z-50">
-          <button
-            className="px-4 py-2 bg-white/80 rounded-lg text-sm font-bold shadow-sm hover:bg-white transition-colors"
-            onClick={() => navigate("/home")}
-          >
-            홈으로 이동
-          </button>
         </div>
 
         {/* 초대코드 에러 메시지 */}
