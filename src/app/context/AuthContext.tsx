@@ -34,11 +34,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 프로필 가져오기
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
       .single();
+    if (error) {
+      console.error("[AuthContext] profile 조회 실패:", error);
+      setProfile(null);
+      return;
+    }
     setProfile(data);
   }, []);
 
