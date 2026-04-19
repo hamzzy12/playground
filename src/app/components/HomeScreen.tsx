@@ -75,15 +75,17 @@ export default function HomeScreen() {
 
   // 미션 목록이 변경되면 정렬된 순서 갱신
   useEffect(() => {
-    const missionIds = missions.map(m => m.id);
-    const hasNewMission = missionIds.some(id => !missionOrder.includes(id));
-    if (missionOrder.length === 0 || hasNewMission) {
-      const sortedIds = [...missions]
+    setMissionOrder(prev => {
+      const missionIds = missions.map(m => m.id);
+      const hasNewMission = missionIds.some(id => !prev.includes(id));
+      // 첫 진입(prev 비어있고 missions도 비어있음)이거나 새 미션이 없으면 그대로 유지
+      if (prev.length === 0 && missionIds.length === 0) return prev;
+      if (prev.length > 0 && !hasNewMission) return prev;
+      return [...missions]
         .sort((a, b) => MISSION_STATUS_PRIORITY[a.status] - MISSION_STATUS_PRIORITY[b.status])
         .map(m => m.id);
-      setMissionOrder(sortedIds);
-    }
-  }, [missions, missionOrder]);
+    });
+  }, [missions]);
 
   // 완료된 미션 처리 + 탭 복원
   useEffect(() => {
