@@ -26,13 +26,14 @@
 - **개발 환경**: `.env.example`, README 셋업 가이드, lint+typecheck pre-commit
 
 ### ⚠️ 부분 구현
+- **초대 시스템 (수신만 동작)**: 코드를 받은 쪽 화면(`/`, `/invitation`, `/invitation-signup`)과 검증/사용처리 로직은 있음. **발급/공유 쪽은 전혀 없음** — 그룹 생성 UI도, 코드 생성 함수도, 공유 화면도 없어 현재 테스트하려면 Supabase 대시보드에서 `groups` + `invite_codes` row를 수동 삽입해야 함
 - **미션 목록**: `proposer_id` 또는 `accepter_id = 본인`만 표시. 그룹 단위 공유 X
 - **Realtime 구독**: `missions` 테이블 전체를 구독 후 본인 필터(RLS가 데이터 차단). 그룹 필터로 좁혀야 효율적
 - **프로필 코인**: 표시만 하고 증감 로직 없음
 - **랭킹 뷰**: DB에 `ranking_view`는 존재하나 UI는 정적 데이터
 
 ### ❌ 미구현
-- 그룹 생성 화면, 초대코드 발급 UI
+- 그룹 생성 화면, 초대코드 발급/공유 UI
 - 그룹 멤버 목록
 - 다른 멤버의 미션 보기 / 미션 수락 UI
 - 상점 DB 연동 (현재 ShopItem 정적 예시)
@@ -53,19 +54,24 @@
 - **`pending` 상태 활용**: 현재 코드는 모두 `active`로 시작. "수락 대기 = pending → 수락 시 active"로 분리할지
 - **동일 미션 다수 수행 허용?**: 한 번 수락되면 잠금 vs 매일/매주 반복 미션은 멀티 수행
 - **미션 거절(reject) 상태 도입?**: 현재 상태 enum에 없음
+- **초대 공유 방식**: ① 코드 문자열만 보여주기(수동 복사) / ② 딥링크 URL(`/invitation?code=XXX`) 자동 채움 / ③ 카카오/SMS 공유 SDK 연동 / ④ QR 코드
+- **그룹당 초대코드 정책**: 한 번에 한 개만 활성 vs 여러 개 동시 활성 / 만료 기간 설정 여부 / 1회용 vs 다회용
 
 ### 백엔드
 - `missionService.fetchByGroup(groupId)` 추가, 기존 `fetchByUser`는 사용처 확인 후 정리
 - Realtime 구독에 `filter: group_id=eq.${myGroupId}` 적용
 - `groupService.create(name)` — 그룹 생성 + 본인을 첫 멤버로 등록 + `profiles.group_id` 갱신
-- `inviteCodeService.generate(groupId)` — 새 코드 발급 (UUID/랜덤 문자열)
+- `inviteCodeService.create(groupId, creatorId)` — 새 코드 발급 (UUID/랜덤 문자열)
 - (가시성 결정에 따라) `missions.status` enum에 `rejected` 추가 — 마이그레이션 필요
+- (만료/1회용 정책 결정 시) `invite_codes`에 `expires_at` / `max_uses` 컬럼 추가 마이그레이션
 
 ### 프론트엔드
 - 홈 미션 탭 재구성: "받은 미션(나에게 제안된 것)" / "보낸 미션(내가 제안한 것)" / "그룹 미션(다른 멤버 활동)" 식
 - 미션 수락 UI (pending 카드의 수락/거절 버튼)
 - 그룹 생성 화면 (LoginScreen 또는 신규 `/group-create`)
-- 그룹 멤버 목록 화면 + 초대코드 발급 버튼
+- 그룹 멤버 목록 화면
+- **초대코드 발급/공유 화면** — 코드 표시 + 복사 버튼 + (결정에 따라) 딥링크/QR/외부 공유
+- `/invitation?code=XXX` 딥링크 처리 (URL 파라미터 자동 입력)
 - 햄버거 메뉴에 "내 그룹" 항목 추가
 
 ---
