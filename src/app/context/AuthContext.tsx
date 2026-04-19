@@ -54,29 +54,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   // 초기 세션 확인 + 인증 상태 변경 구독
+  // loading은 "세션 확정 여부"만 표현하고, profile은 백그라운드에서 로드
   useEffect(() => {
-    // 현재 세션 가져오기
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      setLoading(false);
       if (currentSession?.user) {
-        fetchProfile(currentSession.user.id).then(() => setLoading(false));
-      } else {
-        setLoading(false);
+        fetchProfile(currentSession.user.id);
       }
     });
 
-    // 인증 상태 변경 리스너
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      (_event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        setLoading(false);
         if (newSession?.user) {
-          await fetchProfile(newSession.user.id);
+          fetchProfile(newSession.user.id);
         } else {
           setProfile(null);
         }
-        setLoading(false);
       }
     );
 
