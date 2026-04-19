@@ -1,15 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
-import type { UserRole } from "@/lib/database.types";
 
 export interface Profile {
   id: string;
   name: string;
-  role: UserRole;
   profile_img: string | null;
   border_color: string | null;
   coins: number;
+  group_id: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -11,7 +11,13 @@
       "mcp__figma-desktop__get_screenshot",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:)"
+      "Bash(git push:)",
+      "Bash(ls -1 /Users/gotaehwan/hamzzy/playground/src/app/components/*.tsx)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(wc:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s http://localhost:5174/)"
     ],
     "additionalDirectories": [
       "/tmp",

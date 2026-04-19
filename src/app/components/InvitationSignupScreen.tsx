@@ -49,40 +49,33 @@ export default function InvitationSignupScreen() {
 
     setSignupError("");
 
-    // 역할 결정: 초대코드의 role_for 기반 또는 기본 solo
-    const role = inviteState?.roleFor === "child" ? "child" as const
-      : inviteState?.roleFor === "parent" ? "parent" as const
-      : "solo" as const;
-
     // 프로필 업데이트 (이미 Google 로그인으로 auth.users + profiles 생성됨)
     if (user) {
-      await updateProfile({ name: name.trim(), role });
+      await updateProfile({ name: name.trim() });
 
-      // 초대코드가 있으면 가족 관계 생성 + 코드 사용 처리
+      // 초대코드가 있으면 그룹 합류 + 코드 사용 처리
       if (inviteState?.inviteCode) {
-        // 초대코드에서 생성자 정보 가져오기
         const { data: codeData } = await supabase
           .from("invite_codes")
-          .select("creator_id")
+          .select("creator_id, group_id")
           .eq("code", inviteState.inviteCode)
           .single();
 
         if (codeData) {
-          // 가족 관계 생성
-          const familyInsert = role === "child"
-            ? { parent_id: codeData.creator_id, child_id: user.id }
-            : { parent_id: user.id, child_id: codeData.creator_id };
+          // 그룹 멤버로 추가
+          if (codeData.group_id) {
+            await supabase
+              .from("group_members")
+              .insert({ group_id: codeData.group_id, user_id: user.id });
 
-          const { data: familyData } = await supabase
-            .from("families")
-            .insert(familyInsert)
-            .select()
-            .single();
+            // 프로필에 그룹 ID 저장
+            await updateProfile({ group_id: codeData.group_id });
+          }
 
           // 초대코드 사용 처리
           await supabase
             .from("invite_codes")
-            .update({ used_by: user.id, family_id: familyData?.id })
+            .update({ used_by: user.id })
             .eq("code", inviteState.inviteCode);
         }
       }
@@ -166,9 +159,7 @@ export default function InvitationSignupScreen() {
         {showSignupComplete && (
           <SignupCompletePopup
             onConfirm={() => {
-              const role = inviteState?.roleFor;
-              const route = role === "parent" ? "/parent-home" : role === "child" ? "/home" : "/solo-home";
-              navigate(route);
+              navigate("/home");
             }}
           />
         )}
