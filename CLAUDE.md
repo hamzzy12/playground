@@ -2,6 +2,21 @@
 
 그룹 미션 기반 보상 앱. 멤버끼리 미션을 제안하고 수행하며 보상 포인트를 주고받는다.
 
+## 🗺️ 로드맵 — 먼저 확인할 것
+
+**모든 기능 작업은 `docs/roadmap.md`부터 확인하세요.**
+
+- 현재 진행 상황(✅ 완료 / ⚠️ 부분 / ❌ 미구현)
+- Phase 1~5 단위 구현 계획
+- 기획 결정이 필요한 항목 (`Phase X: 기획 결정 필요`)
+
+새 기능 요청이 들어오면 로드맵의 어느 Phase에 해당하는지 먼저 매핑하고, 기획 결정 대기 중인 항목이면 구현 전에 결정을 받으세요.
+
+관련 문서 분리:
+- `docs/roadmap.md` — **무엇을 *언제* 만들지** (미래 계획)
+- `.claude/skills/user-flow/SKILL.md` — **현재 *어떻게 동작*하는지** (현 상태 레퍼런스)
+- `docs/backend-integration-plan.md` — 초기 Supabase 셋업 기록 (Phase 0 완료)
+
 ## 핵심 개념
 
 - **그룹**: 초대코드로 멤버를 초대하여 그룹 구성 (역할 구분 없이 동등한 멤버)
@@ -24,29 +39,30 @@
 - **애니메이션**: Motion (Framer Motion)
 - **UI 컴포넌트**: Radix UI
 
-## 프로젝트 구조 (Atomic Design)
+## 프로젝트 구조 (Atomic Design 점진 이동 중)
 
 ```
 src/
 ├── app/
-│   ├── App.tsx              # 라우터 설정
+│   ├── App.tsx              # 라우터 + AppInitializer
 │   ├── components/
-│   │   ├── atoms/           # 최소 단위 UI (버튼, 토글, 배지)
-│   │   ├── molecules/       # 단일 기능 (MissionCard, ShopItem)
-│   │   ├── organisms/       # 독립 UI 영역 (MissionList, NavigationBar)
-│   │   ├── templates/       # 레이아웃 골격
-│   │   ├── pages/           # 라우트 매핑 화면
-│   │   └── *.tsx            # 기존 화면 컴포넌트 (점진적 이동 중)
-│   ├── context/             # React Context (Auth, Mission)
-│   ├── hooks/               # Custom Hooks (useTodayDate, useMissionSort)
-│   ├── constants/           # 상수 (미션 색상, 프로필 맵)
+│   │   ├── atoms/           # (비어있음)
+│   │   ├── molecules/       # MissionCard, ShopItem
+│   │   ├── organisms/       # (비어있음)
+│   │   ├── templates/       # (비어있음)
+│   │   └── *.tsx            # 기존 평면 화면 (HomeScreen 등, 점진 이동 중)
+│   ├── stores/              # Zustand 스토어 (auth, profile, mission)
 │   ├── services/            # Supabase 서비스 레이어
-│   └── types/               # 공유 TypeScript 타입
+│   ├── hooks/               # Custom Hooks
+│   ├── constants/           # 상수
+│   └── types/               # 공유 타입 (mission, profile)
 ├── lib/                     # 외부 라이브러리 초기화 (supabase.ts)
 ├── imports/                 # Figma 컴포넌트 + SVG 경로
-├── assets/                  # 이미지 에셋 (PNG/SVG)
+├── assets/                  # 이미지 에셋
 └── styles/                  # 글로벌 CSS
 ```
+
+상태 관리는 Zustand(Context 아님), DB 접근은 Service 레이어를 경유. 상세 규칙은 `.claude/skills/frontend-standards/SKILL.md`, `.claude/skills/backend-integration/SKILL.md` 참고.
 
 ## 사용자 플로우
 
