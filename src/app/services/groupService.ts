@@ -18,40 +18,30 @@ export interface GroupMember {
 
 export const groupService = {
   /**
-   * 그룹 생성 → 본인을 첫 멤버로 등록 → profiles.group_id 갱신.
-   * 실패 시 부분 생성 방지를 위해 순차 실행 후 에러 체크.
+   * 그룹 생성: `create_group_with_owner(name)` RPC 호출.
+   * 내부적으로 groups INSERT + group_members INSERT + profiles.group_id UPDATE 를
+   * 한 트랜잭션에서 SECURITY DEFINER 로 수행.
+   * creatorId 인자는 store 와의 호환을 위해 유지하지만 서버가 auth.uid() 로 덮어씀.
    */
-  async create(name: string, creatorId: string): Promise<Group | null> {
-    const { data: group, error: gErr } = await supabase
-      .from("groups")
-      .insert({ name, created_by: creatorId })
-      .select("*")
-      .single();
-    if (gErr || !group) {
-      console.error("[groupService] create (group):", gErr);
+  async create(name: string, _creatorId: string): Promise<Group | null> {
+    const { data, error } = await supabase.rpc("create_group_with_owner", {
+      p_name: name,
+    });
+    if (error || !data) {
+      console.error("[groupService] create:", error);
       return null;
     }
-
-    const { error: mErr } = await supabase
-      .from("group_members")
-      .insert({ group_id: group.id, user_id: creatorId });
-    if (mErr) {
-      console.error("[groupService] create (member):", mErr);
-    }
-
-    const { error: pErr } = await supabase
-      .from("profiles")
-      .update({ group_id: group.id })
-      .eq("id", creatorId);
-    if (pErr) {
-      console.error("[groupService] create (profile.group_id):", pErr);
-    }
-
+    const row = data as {
+      id: string;
+      name: string;
+      created_by: string;
+      created_at: string;
+    };
     return {
-      id: group.id,
-      name: group.name,
-      createdBy: group.created_by,
-      createdAt: group.created_at,
+      id: row.id,
+      name: row.name,
+      createdBy: row.created_by,
+      createdAt: row.created_at,
     };
   },
 

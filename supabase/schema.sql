@@ -394,8 +394,72 @@ ORDER BY completed_count DESC;
 
 
 -- ============================================
+-- RPC: 그룹 생성 (groups INSERT + group_members INSERT + profiles.group_id UPDATE 를
+-- 한 트랜잭션에서 수행). SECURITY DEFINER 로 RLS 우회해 멀티테이블 원자성 확보.
+-- ============================================
+CREATE OR REPLACE FUNCTION public.create_group_with_owner(p_name TEXT)
+RETURNS public.groups
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_group public.groups;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  INSERT INTO public.groups (name, created_by)
+    VALUES (p_name, v_user_id)
+    RETURNING * INTO v_group;
+
+  INSERT INTO public.group_members (group_id, user_id)
+    VALUES (v_group.id, v_user_id);
+
+  UPDATE public.profiles SET group_id = v_group.id WHERE id = v_user_id;
+
+  RETURN v_group;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.create_group_with_owner(TEXT) TO authenticated;
+
+
+-- ============================================
+-- Grants (role 레벨 권한)
+-- RLS 가 활성화된 테이블도 역할별 GRANT 가 별도로 필요함.
+-- `DROP SCHEMA public CASCADE` 후 스키마 재생성 시 default privileges 가 초기화되므로
+-- schema.sql 에 명시적으로 부여해 둠.
+-- ============================================
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+-- 신규 테이블에도 자동 적용 (후속 마이그레이션 대비)
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO authenticated;
+
+
+-- ============================================
 -- Realtime 활성화
 -- ============================================
 ALTER PUBLICATION supabase_realtime ADD TABLE missions;
 ALTER PUBLICATION supabase_realtime ADD TABLE mission_participants;
 ALTER PUBLICATION supabase_realtime ADD TABLE products;
+
+
+-- ============================================
+-- 기존 auth 사용자 profile 백필
+-- `handle_new_user` 트리거는 신규 auth.users INSERT 에만 발동하므로
+-- 스키마 리셋 후 이미 로그인되어 있던 사용자의 profiles row 가 유실됨.
+-- 멱등 쿼리 (ON CONFLICT DO NOTHING) 로 항상 끝에 실행.
+-- ============================================
+INSERT INTO profiles (id, name)
+SELECT u.id, COALESCE(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', '사용자')
+FROM auth.users u
+LEFT JOIN profiles p ON p.id = u.id
+WHERE p.id IS NULL
+ON CONFLICT (id) DO NOTHING;

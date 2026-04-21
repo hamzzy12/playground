@@ -223,3 +223,115 @@ GRANT ALL ON SCHEMA public TO service_role;
 3. 코드 복사 또는 링크 복사 → 다른 Google 계정으로 `/invitation-signup?code=XXX` 접속 → 가입
 4. 한쪽에서 미션 제안 → 다른 쪽에서 `그룹 미션` 탭에서 수락 → 완료 팝업까지
 5. 참여자 배지 클릭 → `MissionParticipantsModal` 열림
+
+---
+
+# 2026-04-22 후속 — 브라우저 수동 테스트 + RLS 이슈 대응
+
+2026-04-21 빌드가 TypeScript / lint 는 통과했지만 실제 동작 테스트에서 연쇄적으로 막혀 세 가지 수정을 가했다.
+
+## 겪은 에러와 단계별 진단
+
+### 1) 403 `permission denied for table "groups"` (Postgres SQLSTATE 42501)
+
+- **원인**: `DROP SCHEMA public CASCADE` + `CREATE SCHEMA public` 후 `authenticated` role 에 테이블 GRANT 가 없던 상태. RLS 정책 이전 단계(role-level privilege)에서 차단.
+- **조치**: `schema.sql` 끝에 명시적 GRANT + `ALTER DEFAULT PRIVILEGES` 블록 추가.
+  ```sql
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
+  GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public
+    GRANT USAGE, SELECT ON SEQUENCES TO authenticated;
+  ```
+
+### 2) 403 `new row violates row-level security policy for table "groups"` (코드 42501)
+
+GRANT 가 해결된 뒤 튀어나온 RLS violation. 겉보기엔 `WITH CHECK (created_by = auth.uid())` 조건 위반.
+
+- **가설 1 — JWT 정합성**: `supabase.auth.getUser()` 와 클라이언트 store 의 user id 가 다를 가능성 → `groupService.create` 에서 세션 값을 항상 fetch 하도록 수정. 결과 동일 실패.
+- **가설 2 — 스키마 리셋으로 profile row 유실**: `DROP SCHEMA public` 으로 `profiles` 테이블이 날아갔고 `handle_new_user` 트리거는 신규 INSERT 에만 발동. `schema.sql` 끝에 auth.users 기반 백필 쿼리 추가.
+  ```sql
+  INSERT INTO profiles (id, name)
+  SELECT u.id, COALESCE(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', '사용자')
+  FROM auth.users u
+  LEFT JOIN profiles p ON p.id = u.id
+  WHERE p.id IS NULL
+  ON CONFLICT (id) DO NOTHING;
+  ```
+- **가설 3 — 정책 진단 RPC 로 auth 상태 확인**: `whoami()` 결과 `auth.uid()` / `auth.role()` 모두 정상이었음 (`"15a5bd92-...", "authenticated"`).
+- **가설 4 — 정책 자체가 잘못 설정**: `pg_policies` 에서 단 하나의 INSERT 정책 (`PERMISSIVE` + `WITH CHECK (true)` + `TO public`) 상태로 만들어도 여전히 42501. 트리거/룰 없음. 다른 테이블 정책 없음. Postgres 동작 원칙상 설명 안 되는 상태.
+
+### 3) 해결 — `create_group_with_owner` RPC
+
+원인 규명보다 **아키텍처 전환**이 더 적합한 지점으로 판단. 그룹 생성이 본래 `groups` + `group_members` + `profiles` 3-테이블 쓰기가 필요한 복합 연산이라 단일 함수로 감싸는 게 Supabase 권장 패턴이기도 함.
+
+```sql
+CREATE OR REPLACE FUNCTION public.create_group_with_owner(p_name TEXT)
+RETURNS public.groups
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id UUID := auth.uid();
+  v_group public.groups;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  INSERT INTO public.groups (name, created_by)
+    VALUES (p_name, v_user_id)
+    RETURNING * INTO v_group;
+
+  INSERT INTO public.group_members (group_id, user_id)
+    VALUES (v_group.id, v_user_id);
+
+  UPDATE public.profiles SET group_id = v_group.id WHERE id = v_user_id;
+
+  RETURN v_group;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.create_group_with_owner(TEXT) TO authenticated;
+```
+
+- **장점**: RLS 레이어 우회, 3-INSERT/UPDATE 를 단일 트랜잭션으로 묶어 부분 생성 방지, 클라이언트 호출 1회.
+- **`groupService.create` 변경**: 직접 INSERT 대신 `supabase.rpc("create_group_with_owner", { p_name })` 호출.
+
+## 수동 테스트 확인 완료
+
+1인 시나리오 한정:
+
+- `/group-create` → 그룹 생성 + group_members + profiles.group_id 3개 쓰기 모두 반영 ✅
+- `/group-members` → 초대코드 자동 발급 + 코드 복사 / 링크 복사 ✅
+- `/mission-propose` → missions INSERT 통과 (단순 `WITH CHECK (proposer_id = auth.uid())` 정책, 정상) ✅
+- `/home` 그룹 미션 탭에서 수락 → `mission_participants` INSERT ✅ → 완료 버튼 → `completed` 전환 ✅
+- `MissionParticipantsModal` → 참여자 및 상태 표시 ✅
+
+## 남은 미스터리 (우선순위 낮음)
+
+**왜 `groups` 만 `WITH CHECK (true)` PERMISSIVE 정책으로도 42501 이 나왔는지** 는 끝내 규명 못 함. `missions` / `mission_participants` 는 유사한 RLS 정책으로 정상 통과되므로 groups 테이블 특유의 상태 이슈로 추정. SECURITY DEFINER RPC 로 우회된 상태라 운영에 영향 없음. 재현 조건 잡히면 재조사.
+
+## 다음 세션에서 할 일
+
+### 🔴 2인 테스트 (초대/수락 + Realtime)
+
+1인 플로우만 검증됨. 다음 검증이 필요:
+
+1. A 계정으로 로그인 → 그룹 생성 → 초대코드 복사
+2. 시크릿 창 (또는 다른 Google 계정) 으로 `/invitation-signup?code=XXX` 접속 → 가입
+3. B 계정이 같은 그룹에 소속되는지 (`profiles.group_id` 동일)
+4. A 가 미션 제안 → B 쪽 `/home` 에서 보이는지 (**Realtime**)
+5. B 가 수락 → A 의 참여자 배지 카운트 증가 (**Realtime**)
+6. B 가 완료 → A 의 참여자 모달에 "B · 완료" 표시
+
+### 🔴 UI 깨짐 수정
+
+현재 브라우저 테스트 중 드러난 시각적 문제들:
+
+- 모달(예: `MissionParticipantsModal`, `GroupMembersScreen` 등) 레이아웃 / 위치 어긋남
+- 참여자 수 배지의 위치 / 카드와 겹침
+- 기타 Figma 기준 393×852 고정 레이아웃에서 벗어나는 부분
+- 구체 케이스는 2인 테스트와 병행해 정리
