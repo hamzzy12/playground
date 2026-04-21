@@ -5,5 +5,9 @@ export {
   type MissionCreateInput,
   type MissionUpdateInput,
 } from "./missionService";
+export {
+  participationService,
+  type ParticipationJoinInput,
+} from "./participationService";
 export { inviteCodeService, type InviteCode } from "./inviteCodeService";
-export { groupService } from "./groupService";
+export { groupService, type Group, type GroupMember } from "./groupService";

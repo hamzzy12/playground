@@ -1,4 +1,4 @@
-export type MissionStatus = 'pending' | 'active' | 'in_progress' | 'gave_up' | 'challenge_success' | 'completed';
+export type ParticipationStatus = 'in_progress' | 'completed' | 'gave_up';
 export type MissionFrequency = '1회' | '매일' | '매주' | '매월';
 export type ProductStatus = 'available' | 'soldout' | 'shipping' | 'delivered';
 
@@ -82,11 +82,9 @@ export interface Database {
           id: string;
           group_id: string | null;
           proposer_id: string;
-          accepter_id: string | null;
           title: string;
           subtitle: string | null;
           reward: number;
-          status: MissionStatus;
           frequency: MissionFrequency;
           due_date: string | null;
           icon_src: string | null;
@@ -97,11 +95,9 @@ export interface Database {
         Insert: {
           group_id?: string | null;
           proposer_id: string;
-          accepter_id?: string | null;
           title: string;
           subtitle?: string | null;
           reward?: number;
-          status?: MissionStatus;
           frequency?: MissionFrequency;
           due_date?: string | null;
           icon_src?: string | null;
@@ -111,12 +107,36 @@ export interface Database {
           title?: string;
           subtitle?: string | null;
           reward?: number;
-          status?: MissionStatus;
           frequency?: MissionFrequency;
           due_date?: string | null;
           icon_src?: string | null;
           enabled?: boolean;
-          accepter_id?: string | null;
+        };
+      };
+      mission_participants: {
+        Row: {
+          id: string;
+          mission_id: string;
+          user_id: string;
+          instance_date: string | null;
+          status: ParticipationStatus;
+          note: string | null;
+          accepted_at: string;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          mission_id: string;
+          user_id: string;
+          instance_date?: string | null;
+          status?: ParticipationStatus;
+          note?: string | null;
+        };
+        Update: {
+          status?: ParticipationStatus;
+          note?: string | null;
+          completed_at?: string | null;
         };
       };
       products: {

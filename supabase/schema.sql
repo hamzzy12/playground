@@ -85,18 +85,15 @@ CREATE TABLE invite_codes (
 
 
 -- ============================================
--- 5. 미션
+-- 5. 미션 (그룹에 공개되는 "미션 템플릿". 참여/상태는 mission_participants 로 분리)
 -- ============================================
 CREATE TABLE missions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
   proposer_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-  accepter_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   subtitle TEXT,
   reward INTEGER DEFAULT 1 CHECK (reward >= 0 AND reward <= 99),
-  status TEXT NOT NULL DEFAULT 'active'
-    CHECK (status IN ('pending', 'active', 'in_progress', 'gave_up', 'challenge_success', 'completed')),
   frequency TEXT NOT NULL DEFAULT '1회'
     CHECK (frequency IN ('1회', '매일', '매주', '매월')),
   due_date DATE,
@@ -107,8 +104,37 @@ CREATE TABLE missions (
 );
 
 CREATE INDEX idx_missions_proposer ON missions(proposer_id);
-CREATE INDEX idx_missions_accepter ON missions(accepter_id);
 CREATE INDEX idx_missions_group ON missions(group_id);
+
+
+-- ============================================
+-- 5-1. 미션 참여 (1 미션 : N 참여자. 반복 미션은 일자별 row)
+--   * instance_date: 반복 미션은 해당 일자(DATE), 1회성 미션은 NULL
+--   * status: 참여자 개인의 수행 상태 (미션 전체 상태 아님)
+-- ============================================
+CREATE TABLE mission_participants (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  mission_id UUID REFERENCES missions(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  instance_date DATE,
+  status TEXT NOT NULL DEFAULT 'in_progress'
+    CHECK (status IN ('in_progress', 'completed', 'gave_up')),
+  note TEXT,
+  accepted_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (mission_id, user_id, instance_date)
+);
+
+-- Postgres UNIQUE 제약은 NULL을 서로 다른 값으로 취급하므로
+-- 1회성 미션(instance_date=NULL)의 중복 방지를 위한 부분 인덱스
+CREATE UNIQUE INDEX idx_mp_unique_onetime
+  ON mission_participants (mission_id, user_id)
+  WHERE instance_date IS NULL;
+
+CREATE INDEX idx_mp_mission_date ON mission_participants (mission_id, instance_date);
+CREATE INDEX idx_mp_user ON mission_participants (user_id);
 
 
 -- ============================================
@@ -152,6 +178,10 @@ CREATE TRIGGER profiles_updated_at
 
 CREATE TRIGGER missions_updated_at
   BEFORE UPDATE ON missions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER mission_participants_updated_at
+  BEFORE UPDATE ON mission_participants
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 CREATE TRIGGER products_updated_at
@@ -253,12 +283,11 @@ CREATE POLICY "Anyone authenticated can use unused code"
 -- missions: 같은 그룹 멤버 또는 직접 관여한 사용자(제안자/수락자)만 접근
 ALTER TABLE missions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "View missions in own group or own missions"
+CREATE POLICY "View missions in own group"
   ON missions FOR SELECT
   TO authenticated
   USING (
     proposer_id = auth.uid()
-    OR accepter_id = auth.uid()
     OR (group_id IS NOT NULL AND public.is_group_member(group_id))
   );
 
@@ -267,15 +296,53 @@ CREATE POLICY "Create own missions"
   TO authenticated
   WITH CHECK (proposer_id = auth.uid());
 
-CREATE POLICY "Update related missions"
+CREATE POLICY "Update own missions"
   ON missions FOR UPDATE
   TO authenticated
-  USING (proposer_id = auth.uid() OR accepter_id = auth.uid());
+  USING (proposer_id = auth.uid());
 
 CREATE POLICY "Delete own missions"
   ON missions FOR DELETE
   TO authenticated
   USING (proposer_id = auth.uid());
+
+-- mission_participants: 같은 그룹 미션의 참여자끼리 서로 조회 가능.
+-- 본인 row만 생성/수정/삭제 가능.
+ALTER TABLE mission_participants ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "View participants in accessible missions"
+  ON mission_participants FOR SELECT
+  TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR mission_id IN (
+      SELECT id FROM missions
+      WHERE proposer_id = auth.uid()
+        OR (group_id IS NOT NULL AND public.is_group_member(group_id))
+    )
+  );
+
+CREATE POLICY "Join mission as self"
+  ON mission_participants FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    user_id = auth.uid()
+    AND mission_id IN (
+      SELECT id FROM missions
+      WHERE proposer_id = auth.uid()
+        OR (group_id IS NOT NULL AND public.is_group_member(group_id))
+    )
+  );
+
+CREATE POLICY "Update own participation"
+  ON mission_participants FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Delete own participation"
+  ON mission_participants FOR DELETE
+  TO authenticated
+  USING (user_id = auth.uid());
 
 -- products: 같은 그룹 멤버끼리 보임
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -309,8 +376,8 @@ CREATE POLICY "Delete own products"
 
 
 -- ============================================
--- 랭킹 뷰 (미션 완료 수 기준)
--- accepter가 있으면 accepter 기준, 없으면 proposer 본인 카운트
+-- 랭킹 뷰 (mission_participants.status = 'completed' 카운트)
+-- 반복 미션은 일자별로 완료 row가 생기므로 자연스럽게 누적 카운트됨
 -- ============================================
 CREATE OR REPLACE VIEW ranking_view AS
 SELECT
@@ -318,17 +385,17 @@ SELECT
   p.name,
   p.profile_img,
   p.border_color,
-  COUNT(m.id) AS completed_count
+  COUNT(mp.id) AS completed_count
 FROM profiles p
-LEFT JOIN missions m
-  ON (m.accepter_id = p.id OR (m.accepter_id IS NULL AND m.proposer_id = p.id))
-  AND m.status = 'completed'
+LEFT JOIN mission_participants mp
+  ON mp.user_id = p.id AND mp.status = 'completed'
 GROUP BY p.id, p.name, p.profile_img, p.border_color
 ORDER BY completed_count DESC;
 
 
 -- ============================================
--- Realtime 활성화 (MissionContext가 missions 테이블 구독)
+-- Realtime 활성화
 -- ============================================
 ALTER PUBLICATION supabase_realtime ADD TABLE missions;
+ALTER PUBLICATION supabase_realtime ADD TABLE mission_participants;
 ALTER PUBLICATION supabase_realtime ADD TABLE products;
