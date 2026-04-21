@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuthStore, useProfileStore } from "@/app/stores";
 import { inviteCodeService, groupService } from "@/app/services";
 import imgImage20 from "figma:asset/03d18b0705eb33c048b11cf3194ca32f0d463be7.png";
@@ -35,8 +35,13 @@ export default function InvitationSignupScreen() {
   const [name, setName] = useState("");
   const [signupError, setSignupError] = useState("");
 
-  // 초대 정보 (LoginScreen에서 전달)
+  // 초대 정보 — location.state 우선, 없으면 ?code= 딥링크 사용
+  const [searchParams] = useSearchParams();
   const inviteState = location.state as { inviteCode?: string; roleFor?: string } | null;
+  const inviteCode = useMemo(
+    () => inviteState?.inviteCode ?? searchParams.get("code") ?? undefined,
+    [inviteState?.inviteCode, searchParams],
+  );
 
   const handleSignup = async () => {
     if (!name.trim()) {
@@ -55,12 +60,12 @@ export default function InvitationSignupScreen() {
       await updateProfile(user.id, { name: name.trim() });
 
       // 초대코드가 있으면 그룹 합류 + 코드 사용 처리
-      if (inviteState?.inviteCode) {
-        const codeData = await inviteCodeService.validate(inviteState.inviteCode);
+      if (inviteCode) {
+        const codeData = await inviteCodeService.validate(inviteCode);
         if (codeData?.group_id) {
           await groupService.addMember(codeData.group_id, user.id);
           await updateProfile(user.id, { group_id: codeData.group_id });
-          await inviteCodeService.markUsed(inviteState.inviteCode, user.id);
+          await inviteCodeService.markUsed(inviteCode, user.id);
         }
       }
     }
