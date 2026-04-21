@@ -129,24 +129,74 @@ GROUP BY p.id ORDER BY completed_count DESC;
 
 ## Phase 1 범위 안에서 보류된 것
 
-### 1. 반복 미션의 과거 5일 일자별 카드 UI
+### A. 기획 결정 후속 — Phase 1.x 에서 이어갈 것
 
-현재 반복 미션은 "오늘(today)" 인스턴스 1건만 렌더. 사용자 요청인 "최근 5일치 일자별 row + 페이지네이션 + 과거 참여 기록" 은 UX 결정이 더 필요해 Phase 1.x 로 분리:
+#### A-1. 반복 미션의 과거 5일 일자별 카드 UI
+
+현재 반복 미션은 "오늘(today)" 인스턴스 1건만 렌더. 사용자 요청인 "최근 5일치 일자별 row + 페이지네이션 + 과거 참여 기록" 은 UX 결정이 더 필요해 분리:
 
 - 한 카드 안에 5 row 나열 vs 미션별 "기록 보기" 상세 뷰로 분리 중 택 1.
 - 백엔드는 이미 `instance_date` 임의 지정 가능하므로 UI 만 추가.
 
-### 2. 미션 완료 시 코인 증감
+#### A-2. 참여 취소(수락 철회) UI
 
-- 참여자가 `completed` 로 전환되어도 `profiles.coins` 는 변하지 않음. Phase 2 (상점 + 코인 경제) 에서 `transfer_coins` / `buy_product` RPC 와 함께 도입 예정.
+- `missionStore.removeParticipation` 액션은 있지만 진입점 없음. 실수로 수락한 경우 되돌릴 방법 부재.
+- 참여자 모달에서 본인 row 에만 "취소" 버튼 노출하는 방안.
 
-### 3. 그룹 탈퇴 UI
+#### A-3. 참여자 메모(`note`) 입력 UI
 
-- DB 상 `group_members` 행 삭제 정책(`Users can leave a group`)은 있지만 화면 없음. Phase 4 UX 폴리싱.
+- DB 컬럼과 서비스 메서드(`updateNote`) 존재. 모달은 note 를 **표시**만 하고 **입력**은 안 됨.
+- `MissionCompletePopup` 에 한 줄 입력란 추가하면 완료 시점에 메모가 같이 저장되는 자연스러운 흐름.
 
-### 4. 기존 `InvitationScreen` 과 신규 `GroupOnboardingScreen` 의 관계
+### B. 다른 Phase 로 이동
 
-- `/invitation` 은 초대코드 입력 전용 화면으로 유지. 신규 `/group-onboarding` 이 "그룹 만들기 vs 참여하기" 분기 역할.
+#### B-1. 미션 완료 시 코인 증감 → Phase 2
+
+- 참여자가 `completed` 로 전환되어도 `profiles.coins` 는 변하지 않음. 상점 + 코인 경제 구축 시 `transfer_coins` RPC 와 함께 원자적으로 처리.
+
+#### B-2. 그룹 탈퇴 UI → Phase 4
+
+- DB 상 `group_members` 행 삭제 정책(`Users can leave a group`)은 있지만 화면 없음.
+
+#### B-3. 로딩 / 에러 상태 UI → Phase 4
+
+- 신규 화면(`GroupOnboardingScreen` 등)에 에러 메시지는 있으나 스피너/스켈레톤 없음. `useGroupStore.loading` / `useMissionStore.loading` 선 연결만 해둔 상태.
+
+#### B-4. 상점 탭 DB 연동 → Phase 2
+
+- HomeScreen 상점 탭이 여전히 하드코딩 예시. Phase 1 에서는 손대지 않음.
+
+### C. 검증이 필요한 잠재 이슈
+
+#### C-1. `/invitation` 플로우 회귀 검증
+
+- 기존 `InvitationScreen` / `InvitationSignupScreen` 의 가입 플로우가 새로운 스키마(특히 `missions.status` 제거)에서도 동작하는지 실기기 확인 필요. 코드 자체는 `invite_codes` / `groupService.addMember` / `profiles.group_id` 만 만지므로 문제 없을 가능성 높음.
+- `/invitation` 과 `/group-onboarding` 의 역할 분리: `/invitation` = 코드 입력 전용 (기존 유지), `/group-onboarding` = "만들기 vs 참여하기" 분기.
+
+#### C-2. 기존 로그인 사용자의 그룹 변화 감지
+
+- `AppInitializer` 는 `userId` 변화에만 반응. 같은 사용자가 초대코드로 그룹에 새로 합류하면 `profiles.group_id` 는 갱신되지만, 앱이 `fetchForUser` 를 자동 재호출하지 않음.
+- 현재 플로우(`InvitationSignupScreen` 에서 `SignupCompletePopup` → `/home`)는 신규 가입(=userId 변경)이라 문제 없음. 그러나 "로그인 상태에서 다른 그룹 합류" 시나리오가 생기면 명시적 `fetchForUser` 호출이 필요.
+
+### D. 성능 / 최적화 (Phase 4 이후)
+
+#### D-1. `mission_participants` Realtime 전체 구독
+
+- postgres_changes filter 가 단일 컬럼만 지원해서 `mission_id IN (...)` 류 필터링 불가. 전체 구독 + RLS 차단 방식. 규모 커지면 불필요한 이벤트 수신.
+- 해결책: Edge Function 으로 fan-out, 또는 mission_id 리스트 단위 개별 채널 구독.
+
+#### D-2. Realtime 이벤트 → 전체 재조회
+
+- `subscribeGroupMissions` 콜백이 `fetchByGroup` 을 매번 통째로 호출. 여러 건 연속 변경 시 중복 호출 발생.
+- 디바운싱 또는 diff 적용(수신 payload 의 `new` / `old` 를 기반으로 local state 패치).
+
+#### D-3. 그룹 이름 / 입력 검증
+
+- 그룹 이름 `maxLength=30` 외 공백/특수문자 제약 없음. 프로파니티 필터 미적용. Phase 4.
+
+#### D-4. 자동화 테스트 부재
+
+- Phase 0~1 전 구간에 테스트 0개. Phase 4 품질 관리 항목.
 
 ## 검증
 
