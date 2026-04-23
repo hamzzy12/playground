@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore, useGroupStore } from "@/app/stores";
-import { inviteCodeService } from "@/app/services";
+import { useAuthStore, useGroupStore, useMissionStore, useProfileStore } from "@/app/stores";
+import { inviteCodeService, groupService } from "@/app/services";
 import type { InviteCode } from "@/app/services";
 
 export default function GroupMembersScreen() {
@@ -13,6 +13,8 @@ export default function GroupMembersScreen() {
   const [code, setCode] = useState<InviteCode | null>(null);
   const [loadingCode, setLoadingCode] = useState(true);
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     if (!currentGroup || !userId) return;
@@ -35,6 +37,19 @@ export default function GroupMembersScreen() {
     } catch {
       setCopied(null);
     }
+  };
+
+  const handleLeave = async () => {
+    if (!userId || !currentGroup || leaving) return;
+    setLeaving(true);
+    await groupService.leave(currentGroup.id, userId);
+    await useProfileStore.getState().update(userId, { group_id: null });
+    // AppInitializer 가 currentGroupId 변화를 감지해 미션 구독도 자동 정리
+    useGroupStore.getState().clear();
+    useMissionStore.getState().clear();
+    setLeaving(false);
+    setShowLeaveConfirm(false);
+    navigate("/group-onboarding", { replace: true });
   };
 
   if (!currentGroup) {
@@ -146,7 +161,61 @@ export default function GroupMembersScreen() {
             ))}
           </ul>
         </section>
+
+        {/* 탈퇴 영역 */}
+        <section className="mx-[20px] mt-[40px] pb-[20px]">
+          <button
+            onClick={() => setShowLeaveConfirm(true)}
+            className="w-full h-[48px] rounded-[10px] border-2 border-[#ff9b9b] bg-transparent active:scale-95 transition-transform"
+          >
+            <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[16px] text-[#ff9b9b]">
+              그룹 탈퇴
+            </p>
+          </button>
+        </section>
       </div>
+
+      {/* 탈퇴 확인 모달 */}
+      {showLeaveConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => !leaving && setShowLeaveConfirm(false)}
+        >
+          <div
+            className="w-[300px] bg-white rounded-[12px] p-[24px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[20px] text-[#492607] mb-[10px]">
+              그룹을 탈퇴할까요?
+            </p>
+            <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[14px] text-[#8f5a2f] mb-[24px] leading-[1.5]">
+              탈퇴하면 이 그룹의 미션과 상점에 더 이상 접근할 수 없어요.
+              <br />
+              다시 참여하려면 초대코드가 필요해요.
+            </p>
+            <div className="flex gap-[10px]">
+              <button
+                onClick={() => setShowLeaveConfirm(false)}
+                disabled={leaving}
+                className="flex-1 h-[44px] rounded-[8px] border-2 border-[#d68641] active:scale-95 transition-transform disabled:opacity-50"
+              >
+                <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[16px] text-[#d68641]">
+                  취소
+                </p>
+              </button>
+              <button
+                onClick={handleLeave}
+                disabled={leaving}
+                className="flex-1 h-[44px] rounded-[8px] bg-[#e57f7f] active:scale-95 transition-transform disabled:opacity-50"
+              >
+                <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[16px] text-white">
+                  {leaving ? "탈퇴 중..." : "탈퇴하기"}
+                </p>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

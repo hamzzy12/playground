@@ -185,3 +185,30 @@
   - `inviteCodeService.validate` RPC 호출로 교체 (반환 타입도 `{ code, group_id }` 로 좁힘)
   - **Supabase SQL Editor 에서 RPC SQL 실행 필요** (기존 프로젝트에 반영)
 - [ ] 검증: 로그인 전 상태에서 LoginScreen 의 초대코드 검증 정상 동작.
+
+---
+
+# 2026-04-24 후속 작업
+
+BUG-1~4, BUG-10~14 수정 후 2인 플로우로 "그룹 합류" 까지 정상 동작 확인 (`commit 0c47a6b`). 이후 아래 개선을 이어서 처리.
+
+### BUG-15. GroupOnboardingScreen placeholder 에 실제 초대코드 노출
+
+- **위치**: `src/app/components/GroupOnboardingScreen.tsx` 초대코드 입력 필드
+- **문제**: BUG-14 수정 시 placeholder 를 "예: PSYQKDFV" 로 두었는데, PSYQKDFV 가 테스트 그룹의 실제 활성 코드라 사용자에게 "예시처럼 보이지만 실제 동작함" 의 혼란 + 코드 노출.
+- **해결**: placeholder 를 invite code alphabet (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`) 내 더미 8자리 `ABCDEFGH` 로 교체. 실 코드와 구분되도록.
+- [x] 수정 (2026-04-24, 커밋 `0c47a6b` 에 포함 — 기록만 이 섹션에 남김)
+
+### FEAT-1. 그룹 탈퇴 UI (로드맵 Phase 4 항목 앞당김)
+
+- **위치**: `src/app/services/groupService.ts` + `src/app/components/GroupMembersScreen.tsx`
+- **배경**: 로드맵상 Phase 4 "그룹 탈퇴 UI" 로 밀려 있었으나 현재 2인 테스트 사이클에서 "다른 그룹으로 이동" 을 테스트하려면 필수. `supabase/schema.sql` 의 RLS 정책 `"Users can leave a group"` (`USING (user_id = auth.uid())`) 은 이미 존재하므로 UI 만 붙이면 됨.
+- **구현**:
+  - `groupService.leave(groupId, userId)` — `group_members` row DELETE. proposer 로 남긴 `missions` / `mission_participants` 는 의도적으로 미삭제 (재합류 시 복구).
+  - `GroupMembersScreen` 하단에 빨간 border "그룹 탈퇴" 버튼 + 확인 모달.
+  - 탈퇴 플로우: `leave` → `profiles.group_id = NULL` → `useGroupStore.clear()` + `useMissionStore.clear()` → `/group-onboarding` 이동. `AppInitializer` 의 `useEffect(..., [currentGroupId])` 가 변화 감지하여 Realtime 구독 자동 해제.
+- **엣지 케이스 (미처리)**:
+  - 그룹 생성자 탈퇴 허용 — 다른 멤버가 있으면 그룹 유지, 없으면 orphan. Phase 4 cleanup job 로 이동.
+  - 마지막 남은 멤버 탈퇴 시 빈 groups row 남음 — 동일.
+- [x] 구현 (2026-04-24)
+- [ ] 검증: 1) 혼자인 그룹에서 탈퇴 → 온보딩 이동 + DB row 확인 / 2) 2인 그룹에서 한 쪽만 탈퇴 → 나머지는 정상 사용 가능
