@@ -428,6 +428,51 @@ GRANT EXECUTE ON FUNCTION public.create_group_with_owner(TEXT) TO authenticated;
 
 
 -- ============================================
+-- RPC: 초대코드 검증
+-- 로그인 전(anon role)에도 코드 유효성을 확인할 수 있어야 하는데 invite_codes 테이블은
+-- anon 에 GRANT 가 없어서 직접 접근 시 42501 이 난다. 최소 필드(code, group_id)만
+-- 노출하는 SECURITY DEFINER 함수로 우회.
+-- 다회용 초대코드 정책에 맞춰 used_by 는 체크하지 않는다.
+-- ============================================
+CREATE OR REPLACE FUNCTION public.validate_invite_code(p_code TEXT)
+RETURNS TABLE (code TEXT, group_id UUID)
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT ic.code, ic.group_id
+  FROM public.invite_codes ic
+  WHERE ic.code = p_code;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.validate_invite_code(TEXT) TO anon, authenticated;
+
+
+-- ============================================
+-- RPC: 초대 preview (그룹 이름 + 현재 멤버 수)
+-- 수신자는 아직 그룹의 멤버가 아니므로 groups / group_members 의 RLS 가 차단한다.
+-- 초대코드 자체가 "그 그룹을 볼 권한"의 근거이므로 SECURITY DEFINER 로 최소 필드만 공개.
+-- ============================================
+CREATE OR REPLACE FUNCTION public.preview_invite(p_code TEXT)
+RETURNS TABLE (group_id UUID, group_name TEXT, member_count BIGINT)
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+  SELECT g.id, g.name, COUNT(gm.id)::BIGINT
+  FROM public.invite_codes ic
+  JOIN public.groups g ON g.id = ic.group_id
+  LEFT JOIN public.group_members gm ON gm.group_id = g.id
+  WHERE ic.code = p_code
+  GROUP BY g.id, g.name;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.preview_invite(TEXT) TO authenticated;
+
+
+-- ============================================
 -- Grants (role 레벨 권한)
 -- RLS 가 활성화된 테이블도 역할별 GRANT 가 별도로 필요함.
 -- `DROP SCHEMA public CASCADE` 후 스키마 재생성 시 default privileges 가 초기화되므로

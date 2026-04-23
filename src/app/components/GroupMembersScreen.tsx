@@ -24,7 +24,7 @@ export default function GroupMembersScreen() {
   }, [currentGroup, userId]);
 
   const deepLink = code
-    ? `${window.location.origin}/invitation-signup?code=${code.code}`
+    ? `${window.location.origin}/invitation?code=${code.code}`
     : "";
 
   const handleCopy = async (text: string, kind: "code" | "link") => {

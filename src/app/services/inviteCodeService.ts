@@ -19,33 +19,56 @@ function generateCode(): string {
 }
 
 export const inviteCodeService = {
-  /** 미사용 상태의 코드 조회 (초대 플로우에서 유효성 검증용) */
-  async validate(code: string): Promise<InviteCode | null> {
-    const { data, error } = await supabase
-      .from("invite_codes")
-      .select("*")
-      .eq("code", code.trim())
-      .is("used_by", null)
-      .single();
-    if (error || !data) return null;
-    return data as InviteCode;
+  /**
+   * 코드 유효성 검증.
+   * - 로그인 전(LoginScreen) 에서도 호출되므로 anon role 로 invite_codes 테이블에 직접
+   *   접근하면 42501 이 난다. SECURITY DEFINER RPC `validate_invite_code` 를 경유해
+   *   code / group_id 만 노출한다.
+   * - 초대코드는 다회용이므로 used_by 는 체크하지 않는다.
+   */
+  async validate(
+    code: string,
+  ): Promise<{ code: string; group_id: string } | null> {
+    const { data, error } = await supabase.rpc("validate_invite_code", {
+      p_code: code.trim(),
+    });
+    if (error) {
+      console.error("[inviteCodeService] validate:", error);
+      return null;
+    }
+    if (!Array.isArray(data) || data.length === 0) return null;
+    return data[0] as { code: string; group_id: string };
   },
 
-  async markUsed(code: string, userId: string): Promise<void> {
-    const { error } = await supabase
-      .from("invite_codes")
-      .update({ used_by: userId })
-      .eq("code", code);
-    if (error) console.error("[inviteCodeService] markUsed:", error);
+  /**
+   * 초대 preview. 수신자는 아직 그룹 멤버가 아니라 groups / group_members 의 RLS 가
+   * 차단하므로 SECURITY DEFINER RPC 로 최소 필드(이름, 멤버 수)만 노출.
+   */
+  async preview(
+    code: string,
+  ): Promise<{ groupId: string; groupName: string; memberCount: number } | null> {
+    const { data, error } = await supabase.rpc("preview_invite", {
+      p_code: code.trim(),
+    });
+    if (error) {
+      console.error("[inviteCodeService] preview:", error);
+      return null;
+    }
+    if (!Array.isArray(data) || data.length === 0) return null;
+    const row = data[0] as { group_id: string; group_name: string; member_count: number };
+    return {
+      groupId: row.group_id,
+      groupName: row.group_name,
+      memberCount: Number(row.member_count),
+    };
   },
 
-  /** 그룹의 활성(미사용) 코드 하나를 조회. 여러 개면 최신 1건 */
+  /** 그룹의 초대 코드 하나를 조회 (여러 개면 최신). 다회용이라 used_by 무관. */
   async getActiveForGroup(groupId: string): Promise<InviteCode | null> {
     const { data, error } = await supabase
       .from("invite_codes")
       .select("*")
       .eq("group_id", groupId)
-      .is("used_by", null)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();

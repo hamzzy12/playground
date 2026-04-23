@@ -20,9 +20,14 @@ export default function LoginScreen() {
   const [inviteError, setInviteError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 이미 로그인된 유저는 홈으로 자동 이동 (profile 로드와 무관하게 즉시)
+  // 이미 로그인된 유저 처리. 대기중인 초대코드가 있으면 /invitation 으로, 없으면 /home.
   useEffect(() => {
-    if (!loading && user) {
+    if (loading || !user) return;
+    const pending = sessionStorage.getItem("pendingInviteCode");
+    if (pending) {
+      sessionStorage.removeItem("pendingInviteCode");
+      navigate(`/invitation?code=${encodeURIComponent(pending)}`, { replace: true });
+    } else {
       navigate("/home", { replace: true });
     }
   }, [user, loading, navigate]);
@@ -31,6 +36,10 @@ export default function LoginScreen() {
     await signInWithGoogle();
   };
 
+  /**
+   * 로그인 전 초대코드 입력 → 유효성 검증 후 Google OAuth 로 유도.
+   * OAuth 복귀 후 위 useEffect 가 sessionStorage 에서 코드를 읽어 /invitation 으로 넘긴다.
+   */
   const handleInviteSubmit = async () => {
     if (!inviteCode.trim()) {
       setInviteError("초대코드를 입력해주세요");
@@ -47,8 +56,9 @@ export default function LoginScreen() {
       return;
     }
 
-    navigate("/invitation", { state: { inviteCode: data.code, groupId: data.group_id } });
+    sessionStorage.setItem("pendingInviteCode", data.code);
     setIsSubmitting(false);
+    await signInWithGoogle();
   };
 
   return (
