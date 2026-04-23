@@ -63,10 +63,10 @@ export default function App() {
         <Routes>
           {/* 공개 라우트 */}
           <Route path="/" element={<LoginScreen />} />
-          <Route path="/invitation" element={<InvitationScreen />} />
           <Route path="/invitation-signup" element={<InvitationSignupScreen />} />
 
           {/* 인증 필요 라우트 */}
+          <Route path="/invitation" element={<ProtectedRoute><InvitationScreen /></ProtectedRoute>} />
           <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
           <Route path="/group-onboarding" element={<ProtectedRoute><GroupOnboardingScreen /></ProtectedRoute>} />
           <Route path="/group-create" element={<ProtectedRoute><GroupCreateScreen /></ProtectedRoute>} />

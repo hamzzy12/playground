@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { useAuthStore, useProfileStore } from "@/app/stores";
+import { useAuthStore, useProfileStore, useGroupStore } from "@/app/stores";
 import { inviteCodeService, groupService } from "@/app/services";
 import imgImage20 from "figma:asset/03d18b0705eb33c048b11cf3194ca32f0d463be7.png";
 import imgImage14 from "figma:asset/6f18eead9b572899ad877ca3e47a89c821b19b36.png";
@@ -59,13 +59,15 @@ export default function InvitationSignupScreen() {
     if (user) {
       await updateProfile(user.id, { name: name.trim() });
 
-      // 초대코드가 있으면 그룹 합류 + 코드 사용 처리
+      // 초대코드가 있으면 그룹 합류. 코드는 다회용이므로 markUsed 호출하지 않는다.
+      // 합류 직후 useGroupStore 를 동기화해야 /home 진입 시 onboarding 으로 튕기지 않는다
+      // (AppInitializer 의 fetchForUser 는 userId 변화에만 반응하므로 자동 재호출 안 됨).
       if (inviteCode) {
         const codeData = await inviteCodeService.validate(inviteCode);
         if (codeData?.group_id) {
           await groupService.addMember(codeData.group_id, user.id);
           await updateProfile(user.id, { group_id: codeData.group_id });
-          await inviteCodeService.markUsed(inviteCode, user.id);
+          await useGroupStore.getState().setCurrent(codeData.group_id);
         }
       }
     }

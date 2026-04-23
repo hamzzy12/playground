@@ -53,6 +53,20 @@ export const groupService = {
     if (error) console.error("[groupService] addMember:", error);
   },
 
+  /**
+   * 그룹 탈퇴. group_members row 만 삭제.
+   * profiles.group_id 초기화 / store clear 는 호출자가 처리.
+   * 제안한 미션(missions)과 참여 row(mission_participants) 는 남는다 — 그룹에 재합류 시 가시성 복구.
+   */
+  async leave(groupId: string, userId: string): Promise<void> {
+    const { error } = await supabase
+      .from("group_members")
+      .delete()
+      .eq("group_id", groupId)
+      .eq("user_id", userId);
+    if (error) console.error("[groupService] leave:", error);
+  },
+
   async getById(groupId: string): Promise<Group | null> {
     const { data, error } = await supabase
       .from("groups")

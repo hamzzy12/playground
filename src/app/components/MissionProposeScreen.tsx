@@ -88,11 +88,11 @@ export default function MissionProposeScreen() {
 
   const handleConfirmAlert = () => {
     setShowAlert(false);
-    navigate('/home', fromManage ? { state: { missionSubTab: 'manage' } } : undefined);
+    navigate('/home', fromManage ? { state: { missionSubTab: 'mine' } } : undefined);
   };
 
   const handleClose = () => {
-    navigate('/home', fromManage ? { state: { missionSubTab: 'manage' } } : undefined);
+    navigate('/home', fromManage ? { state: { missionSubTab: 'mine' } } : undefined);
   };
 
   return (
