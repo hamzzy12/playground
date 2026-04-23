@@ -108,7 +108,7 @@ export default function HomeScreen() {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"mission" | "shop">("mission");
-  const [missionSubTab, setMissionSubTab] = useState<MissionSubTab>("group");
+  const [missionSubTab, setMissionSubTab] = useState<MissionSubTab>("mine");
   const [isInitialRender, setIsInitialRender] = useState(true);
 
   const [showCompletePopup, setShowCompletePopup] = useState(false);
