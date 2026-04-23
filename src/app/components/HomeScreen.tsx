@@ -44,10 +44,6 @@ import imgHamberger from "figma:asset/cbce2ab124aac67762a2b6ddf11aaa5defb044a4.p
 import imgGiveUp from "figma:asset/8e84a045d8b268a46a68ba2858691647755a8a10.png";
 import imgImage59 from "figma:asset/ed6117d0cb27758f4af5f1b706c8fe1515b5f600.png";
 import imgImage60 from "figma:asset/7c4559a30c02a8324962e51c90a82dfdf2c358c3.png";
-import imgBarYellow from "figma:asset/3d0b785a346010a999a1dd72bd6a85f46b406120.svg";
-import imgEditBtn from "figma:asset/799e50dfe7b7023b5b89d5b87d6f541e8e517937.png";
-import imgToggleOn from "figma:asset/53f85dfeb2f6b438582311a06991c630d2551111.svg";
-import imgToggleOff from "figma:asset/4c3c0360ff1b8b3b2e4a23e9fd5542b76ca16eab.svg";
 
 type MissionSubTab = "group" | "mine";
 
@@ -109,7 +105,6 @@ export default function HomeScreen() {
   const participations = useMissionStore((s) => s.participations);
   const joinMission = useMissionStore((s) => s.join);
   const updateParticipation = useMissionStore((s) => s.updateParticipation);
-  const toggleEnabled = useMissionStore((s) => s.toggleEnabled);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"mission" | "shop">("mission");
@@ -159,11 +154,19 @@ export default function HomeScreen() {
     [missions],
   );
 
-  // 내 미션 탭: 내가 제안한 미션만
-  const myMissions = useMemo(
-    () => missions.filter((m) => m.proposerId === userId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [missions, userId],
-  );
+  // 내 미션 탭: 내가 "오늘 인스턴스" 에 참여한 미션만 (그룹 탭과 같은 MissionCard 로 렌더)
+  const myMissions = useMemo(() => {
+    if (!userId) return [];
+    return missions
+      .filter((m) => {
+        if (!m.enabled) return false;
+        const instanceDate = resolveInstanceDate(m);
+        return participations.some(
+          (p) => p.missionId === m.id && p.userId === userId && p.instanceDate === instanceDate,
+        );
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [missions, participations, userId]);
 
   // 미션 카드의 버튼 클릭
   const handleMissionButtonClick = async (mission: Mission) => {
@@ -203,6 +206,7 @@ export default function HomeScreen() {
     const instanceDate = resolveInstanceDate(mission);
     const mine = findMyParticipation(participations, mission.id, userId, instanceDate);
     const all = findAllParticipations(participations, mission.id, instanceDate);
+    const isProposer = mission.proposerId === userId;
     return (
       <MissionCard
         key={`${mission.id}-${instanceDate ?? "once"}`}
@@ -219,6 +223,19 @@ export default function HomeScreen() {
         participantCount={all.length}
         onButtonClick={() => handleMissionButtonClick(mission)}
         onParticipantBadgeClick={() => setShowParticipantsModal({ mission, instanceDate })}
+        onMenuClick={
+          isProposer
+            ? () =>
+                navigate("/mission-edit", {
+                  state: {
+                    missionId: mission.id,
+                    title: mission.title,
+                    description: mission.subtitle,
+                    reward: mission.reward,
+                  },
+                })
+            : undefined
+        }
       />
     );
   };
@@ -438,27 +455,27 @@ export default function HomeScreen() {
 
               <motion.div
                 className="absolute top-0 h-[37px] w-[120px] bg-[#b9915e] border-2 border-[#f0c58f] rounded-[8px]"
-                animate={{ x: missionSubTab === "group" ? 0 : 120 }}
+                animate={{ x: missionSubTab === "mine" ? 0 : 120 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
 
-              <div className="absolute top-0 left-0 w-[120px] h-full cursor-pointer z-10" onClick={() => setMissionSubTab("group")} />
-              <div className="absolute top-0 right-0 w-[120px] h-full cursor-pointer z-10" onClick={() => setMissionSubTab("mine")} />
+              <div className="absolute top-0 left-0 w-[120px] h-full cursor-pointer z-10" onClick={() => setMissionSubTab("mine")} />
+              <div className="absolute top-0 right-0 w-[120px] h-full cursor-pointer z-10" onClick={() => setMissionSubTab("group")} />
 
               <div className="absolute left-0 top-0 w-[120px] h-full flex items-center justify-center pointer-events-none z-20">
-                <p
-                  className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-center transition-colors duration-300 ${missionSubTab === "group" ? "text-white" : "text-white/30"}`}
-                  style={{ textShadow: "2px 0 0 #45270B, -2px 0 0 #45270B, 0 2px 0 #45270B, 0 -2px 0 #45270B" }}
-                >
-                  그룹 미션
-                </p>
-              </div>
-              <div className="absolute left-[120px] top-0 w-[120px] h-full flex items-center justify-center pointer-events-none z-20">
                 <p
                   className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-center transition-colors duration-300 ${missionSubTab === "mine" ? "text-white" : "text-white/30"}`}
                   style={{ textShadow: "2px 0 0 #45270B, -2px 0 0 #45270B, 0 2px 0 #45270B, 0 -2px 0 #45270B" }}
                 >
                   내 미션
+                </p>
+              </div>
+              <div className="absolute left-[120px] top-0 w-[120px] h-full flex items-center justify-center pointer-events-none z-20">
+                <p
+                  className={`font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-center transition-colors duration-300 ${missionSubTab === "group" ? "text-white" : "text-white/30"}`}
+                  style={{ textShadow: "2px 0 0 #45270B, -2px 0 0 #45270B, 0 2px 0 #45270B, 0 -2px 0 #45270B" }}
+                >
+                  그룹 미션
                 </p>
               </div>
             </div>
@@ -497,48 +514,15 @@ export default function HomeScreen() {
                 </p>
               </button>
 
-              {myMissions.map((mission) => (
-                <div key={mission.id} className="relative w-[361px] h-[152px] mx-auto mb-[10px]">
-                  <div className="absolute left-0 top-[6px] w-[361px] h-[146px] bg-[#45270b] rounded-[8px]" />
-                  <div className="absolute left-0 top-0 w-[361px] h-[146px] bg-[#f2e1be] rounded-[8px]" />
-                  <div className="absolute left-0 top-[99px] w-[361px] h-[47px]">
-                    <img alt="" className="block w-full h-full" src={imgBarYellow} />
-                  </div>
-                  <div className="absolute left-[9px] top-[15px] size-[66px]">
-                    <img alt="" className="w-full h-full object-cover" src={mission.iconSrc ?? imgImage46} />
-                  </div>
-                  <p className="absolute left-[84px] top-[17px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[20px] text-[#492607]">
-                    {mission.title}
-                  </p>
-                  <p className="absolute left-[84px] top-[47px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[20px] text-[#492607]">
-                    {mission.subtitle}
-                  </p>
-                  <p className="absolute left-[16px] top-[104px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
-                    보상 : 칭찬코인 +{mission.reward}
-                  </p>
-                  <div
-                    className="absolute right-[15px] top-[10px] w-[80px] h-[40px] cursor-pointer active:scale-95 transition-transform"
-                    onClick={() =>
-                      navigate("/mission-edit", {
-                        state: {
-                          missionId: mission.id,
-                          title: mission.title,
-                          description: mission.subtitle,
-                          reward: mission.reward,
-                        },
-                      })
-                    }
-                  >
-                    <img alt="수정하기" className="w-full h-full object-cover" src={imgEditBtn} />
-                  </div>
-                  <div
-                    className="absolute right-[15px] top-[108px] w-[58px] h-[30px] cursor-pointer"
-                    onClick={() => toggleEnabled(mission.id, !mission.enabled)}
-                  >
-                    <img alt="" className="block w-full h-full" src={mission.enabled ? imgToggleOn : imgToggleOff} />
-                  </div>
-                </div>
-              ))}
+              {myMissions.length === 0 ? (
+                <p className="text-center mt-[40px] font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
+                  아직 참여 중인 미션이 없어요.
+                  <br />
+                  '그룹 미션' 탭에서 수락해보세요!
+                </p>
+              ) : (
+                myMissions.map(renderMissionCard)
+              )}
             </>
           ) : activeTab === "mission" ? (
             <>

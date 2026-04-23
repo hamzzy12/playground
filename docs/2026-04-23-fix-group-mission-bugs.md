@@ -212,3 +212,42 @@ BUG-1~4, BUG-10~14 수정 후 2인 플로우로 "그룹 합류" 까지 정상 �
   - 마지막 남은 멤버 탈퇴 시 빈 groups row 남음 — 동일.
 - [x] 구현 (2026-04-24)
 - [ ] 검증: 1) 혼자인 그룹에서 탈퇴 → 온보딩 이동 + DB row 확인 / 2) 2인 그룹에서 한 쪽만 탈퇴 → 나머지는 정상 사용 가능
+
+### FEAT-2. 홈 서브탭 순서 교체 (내 미션 ↔ 그룹 미션)
+
+- **위치**: `src/app/components/HomeScreen.tsx`
+- **변경**: 왼쪽 "그룹 미션" / 오른쪽 "내 미션" → 왼쪽 "내 미션" / 오른쪽 "그룹 미션" 으로 배치 교체. `MissionSubTab` 타입 값(`"group" | "mine"`)은 유지해 `MissionProposeScreen` 복귀 시 state 전달 로직 등 외부 호환성 보존. 슬라이딩 하이라이트 애니메이션 `x` 값 로직만 반전.
+- [x] 수정 (2026-04-24)
+
+### FEAT-3. 미션 카드 UI 통합 + ⋮ 메뉴
+
+- **위치**: `src/app/components/HomeScreen.tsx` + `src/app/components/molecules/MissionCard.tsx`
+- **배경**: 이전까지 "내 미션" 탭은 "내가 제안한 미션" 을 custom inline UI (수정/토글 버튼) 로 렌더링하고, "그룹 미션" 탭은 `MissionCard` 로 렌더링해 두 탭 간 UI 이질감이 컸음. 미션 관리 기능(수정)을 카드 컨텍스트 메뉴로 옮겨 UI 를 통일.
+- **구현**:
+  - **"내 미션" 탭 의미 변경**: `proposerId === me` → **내가 오늘 인스턴스에 참여한 미션** (`participations.some(p => p.userId === me && p.instanceDate === resolveInstanceDate(m))`)
+  - **렌더링 통일**: custom inline UI 제거, "내 미션" 탭도 `renderMissionCard` 재사용. 빈 상태 안내 문구 추가 ("아직 참여 중인 미션이 없어요")
+  - **⋮ 메뉴 prop (`MissionCard.onMenuClick`)**: 모든 카드에 세로 ⋮ 버튼 렌더. 클릭 시 팝오버 오픈 + 외부 클릭 닫기(fixed overlay). 팝오버 내용은 권한 분기 — 제안자 본인(`onMenuClick` 주입): "수정하기" 활성 → `/mission-edit` 이동. 비제안자: "수정 권한이 없어요" 안내 (RLS 상 UPDATE 는 `proposer_id = auth.uid()` 제한과 일치)
+  - **사용하지 않게 된 것 정리**: HomeScreen 의 `imgBarYellow`, `imgEditBtn`, `imgToggleOn/Off` imports 및 `useMissionStore.toggleEnabled` 구독 제거. store/service 의 `toggleEnabled` 는 향후 사용 여지로 남김.
+- **MissionCard 구조 조정**: 외곽 div 의 `overflow-hidden` 을 내부 Main Background 로 이동. 그대로 두면 팝오버가 카드 밖으로 나갔을 때 잘림.
+- [x] 구현 (2026-04-24)
+- [ ] 검증: 1) 그룹 탭의 모든 카드에 ⋮ 노출 / 2) 제안자 본인 카드 ⋮ → 수정하기 → `/mission-edit` / 3) 타인 카드 ⋮ → 안내 표시 / 4) 내 미션 탭이 "참여한 미션" 만 표시되는지
+
+### BUG-16. ⋮ 글리프가 ONE_Mobile_POP_OTF 에 없어 렌더링 실패 (폰트 fallback 차단)
+
+- **위치**: `src/app/components/molecules/MissionCard.tsx` + `src/styles/theme.css:123~125` 전역 font-family `!important` 규칙
+- **증상**: FEAT-3 구현 후 ⋮ 가 시각적으로 보이지 않음. 색상 변경 (`text-[#492607]` → `font-bold` → inline `style={{ color }}`) 여러 시도 모두 무효.
+- **진단** (Explore 에이전트로 분석):
+  - `theme.css:123~125` 의 `font-family: 'ONE_Mobile_POP_OTF', sans-serif !important` 전역 규칙이 모든 요소에 강제 적용
+  - ONE_Mobile_POP_OTF (한글/숫자 중심 폰트) 가 U+22EE(VERTICAL ELLIPSIS) 글리프를 포함하지 않음
+  - 정상이라면 브라우저가 폰트 체인을 따라 `sans-serif` 로 fallback 해야 하나, `!important` + 폰트 로딩 타이밍 영향으로 fallback 이 막힘 → **글리프 자체가 렌더되지 않는 상태**
+  - 색상 문제가 아니라 "글자가 그려지지 않음" 이 근본 원인. Tailwind arbitrary value 나 inline style 과 무관
+- **해결**: 유니코드 글리프 의존을 제거하고 `lucide-react` 의 `EllipsisVertical` SVG 아이콘으로 교체 (lucide-react 는 이미 설치됨, 의존성 추가 없음). SVG 는 `currentColor` 기반이라 버튼의 `color` 값이 그대로 아이콘 색으로 적용.
+- **교훈**: 전역 `font-family !important` + 커스텀 폰트 조합에서 특수 유니코드(수학기호/화살표/점 등) 사용 금지. 필요하면 SVG / 아이콘 라이브러리로.
+- [x] 수정 (2026-04-24)
+
+---
+
+## 남은 회귀 포인트 / 다음 확인 대상
+
+- **"미션 만들기" 버튼 복귀 탭**: `MissionProposeScreen` 생성 완료 후 `missionSubTab: 'mine'` 으로 복귀하는데, 내 미션 탭은 이제 "참여한 미션" 이므로 새로 만든 미션은 내가 수락 전까지 이 탭에 안 보임. 사용자가 "왜 안 보임?" 느낄 수 있음 → 복귀 탭을 `'group'` 으로 변경하거나 안내 문구 추가 검토.
+- **"내 미션" 탭의 "미션 만들기" 버튼 유지 여부**: 햄버거 메뉴에 이미 "미션 제안하기" 가 있어 중복. 탭 성격 변경과 함께 제거 검토.
