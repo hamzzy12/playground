@@ -19,12 +19,12 @@ export interface MissionCardProps {
   participantCount?: number;
   onButtonClick?: () => void;
   onParticipantBadgeClick?: () => void;
-  /**
-   * ... 메뉴의 "수정하기" 항목 클릭 콜백.
-   * 지정되면 우측 상단에 세로 ⋮ 버튼이 노출되고, 팝오버에 "수정하기" 항목이 뜬다.
-   * 현재는 제안자 본인에게만 주입 (RLS 상 제안자만 update 가능).
-   */
-  onMenuClick?: () => void;
+  /** 제공되면 ⋮ 메뉴에 "수정하기" 항목 노출. 제안자 본인에게만 주입. */
+  onEdit?: () => void;
+  /** 제공되면 ⋮ 메뉴에 "참여 취소" 항목 노출. 본인이 in_progress 인 경우에만 주입. */
+  onCancel?: () => void;
+  /** 제공되면 ⋮ 메뉴에 "기록 보기" 항목 노출. 반복 미션(1회 제외) 에만 주입. */
+  onShowRecord?: () => void;
 }
 
 /**
@@ -46,8 +46,11 @@ export const MissionCard: React.FC<MissionCardProps> = ({
   participantCount,
   onButtonClick,
   onParticipantBadgeClick,
-  onMenuClick,
+  onEdit,
+  onCancel,
+  onShowRecord,
 }) => {
+  const hasMenu = Boolean(onEdit || onCancel || onShowRecord);
   const { bgColor, barColor } = getColorsForParticipation(myStatus);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -90,8 +93,8 @@ export const MissionCard: React.FC<MissionCardProps> = ({
           </div>
         </div>
 
-        {/* 참여자 수 배지 (클릭 가능) */}
-        {typeof participantCount === "number" && (
+        {/* 참여자 수 배지 (클릭 가능). 0명이면 노출하지 않음 */}
+        {typeof participantCount === "number" && participantCount > 0 && (
           <button
             className="absolute right-[160px] top-[14px] h-[26px] px-[10px] rounded-full bg-[#492607] text-white font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[14px] active:scale-95 transition-transform"
             onClick={(e) => {
@@ -116,50 +119,75 @@ export const MissionCard: React.FC<MissionCardProps> = ({
       </div>
 
       {/*
-        세로 ⋮ 메뉴 버튼 + 팝오버 (overflow-hidden 바깥에 배치해 팝오버가 잘리지 않게).
-        ⋮ 는 모든 카드에 노출. 팝오버 항목은 권한에 따라 분기 — 제안자만 "수정하기" 활성,
-        비제안자는 안내 문구. (RLS 상 UPDATE 는 proposer_id = auth.uid() 로 제한)
+        세로 ⋮ 메뉴 — overflow-hidden 바깥에 배치해 팝오버가 잘리지 않게.
+        메뉴 항목이 하나라도 있을 때만 (`hasMenu`) ⋮ 자체가 노출.
+        - `onEdit` 제공 (제안자 본인) → "수정하기"
+        - `onCancel` 제공 (본인 in_progress) → "참여 취소"
       */}
-      <button
-        className="absolute right-[8px] top-[8px] w-[32px] h-[32px] flex items-center justify-center active:scale-95 transition-transform z-20"
-        style={{ color: "#492607" }}
-        onClick={(e) => {
-          e.stopPropagation();
-          setMenuOpen((v) => !v);
-        }}
-        aria-label="메뉴"
-      >
-        <EllipsisVertical size={22} strokeWidth={2.5} />
-      </button>
-      {menuOpen && (
+      {hasMenu && (
         <>
-          {/* 외부 클릭 닫기 */}
-          <div
-            className="fixed inset-0 z-30"
+          <button
+            className="absolute right-[8px] top-[8px] w-[32px] h-[32px] flex items-center justify-center active:scale-95 transition-transform z-20"
+            style={{ color: "#492607" }}
             onClick={(e) => {
               e.stopPropagation();
-              setMenuOpen(false);
+              setMenuOpen((v) => !v);
             }}
-          />
-          {/* 팝오버 */}
-          <div className="absolute right-[8px] top-[44px] z-40 bg-white rounded-[8px] shadow-lg py-[4px] min-w-[140px] border border-[#e0e0e0]">
-            {onMenuClick ? (
-              <button
-                className="w-full text-left px-[14px] py-[10px] text-[15px] text-[#492607] hover:bg-[#f5f0e2] active:bg-[#ebe2cc] font-['ONE_Mobile_POP_OTF:Regular',sans-serif]"
+            aria-label="메뉴"
+          >
+            <EllipsisVertical size={22} strokeWidth={2.5} />
+          </button>
+          {menuOpen && (
+            <>
+              {/* 외부 클릭 닫기 */}
+              <div
+                className="fixed inset-0 z-30"
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuOpen(false);
-                  onMenuClick();
                 }}
-              >
-                수정하기
-              </button>
-            ) : (
-              <p className="w-full px-[14px] py-[10px] text-[13px] text-[#8f5a2f] font-['ONE_Mobile_POP_OTF:Regular',sans-serif]">
-                수정 권한이 없어요
-              </p>
-            )}
-          </div>
+              />
+              {/* 팝오버 */}
+              <div className="absolute right-[8px] top-[44px] z-40 bg-white rounded-[8px] shadow-lg py-[4px] min-w-[140px] border border-[#e0e0e0]">
+                {onEdit && (
+                  <button
+                    className="w-full text-left px-[14px] py-[10px] text-[15px] text-[#492607] hover:bg-[#f5f0e2] active:bg-[#ebe2cc] font-['ONE_Mobile_POP_OTF:Regular',sans-serif]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onEdit();
+                    }}
+                  >
+                    수정하기
+                  </button>
+                )}
+                {onShowRecord && (
+                  <button
+                    className="w-full text-left px-[14px] py-[10px] text-[15px] text-[#492607] hover:bg-[#f5f0e2] active:bg-[#ebe2cc] font-['ONE_Mobile_POP_OTF:Regular',sans-serif]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onShowRecord();
+                    }}
+                  >
+                    기록 보기
+                  </button>
+                )}
+                {onCancel && (
+                  <button
+                    className="w-full text-left px-[14px] py-[10px] text-[15px] text-[#c54040] hover:bg-[#fbeaea] active:bg-[#f5d6d6] font-['ONE_Mobile_POP_OTF:Regular',sans-serif]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onCancel();
+                    }}
+                  >
+                    참여 취소
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

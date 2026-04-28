@@ -8,8 +8,8 @@ interface GroupState {
   loading: boolean;
   /** profile.group_id 를 기반으로 현재 그룹 + 멤버 로드. group_id 없으면 null 상태. */
   fetchForUser: (userId: string) => Promise<void>;
-  /** 새 그룹 생성 후 상태에 반영 */
-  create: (name: string, creatorId: string) => Promise<Group | null>;
+  /** 새 그룹 생성 후 상태에 반영. 호출자는 로그인된 상태여야 함 (RPC 가 auth.uid() 사용) */
+  create: (name: string) => Promise<Group | null>;
   /** 이미 알고 있는 groupId 로 로드 (초대코드 가입 직후 등) */
   setCurrent: (groupId: string) => Promise<void>;
   clear: () => void;
@@ -39,8 +39,8 @@ export const useGroupStore = create<GroupState>((set) => ({
     set({ currentGroup: group, members, loading: false });
   },
 
-  create: async (name, creatorId) => {
-    const group = await groupService.create(name, creatorId);
+  create: async (name) => {
+    const group = await groupService.create(name);
     if (group) {
       const members = await groupService.getMembers(group.id);
       set({ currentGroup: group, members });

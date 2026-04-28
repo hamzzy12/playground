@@ -33,6 +33,8 @@ export interface ParticipationJoinInput {
   /** 반복 미션의 해당 일자(YYYY-MM-DD). 1회성이면 null */
   instanceDate: string | null;
   note?: string;
+  /** 기본 'in_progress'. 과거 일자 보충 입력 등에서 'completed' 로 바로 생성 가능 */
+  status?: ParticipationStatus;
 }
 
 export const participationService = {
@@ -49,16 +51,18 @@ export const participationService = {
     return (data as ParticipationRow[]).map(rowToParticipation);
   },
 
-  /** 사용자가 미션 수락 (row 생성) */
+  /** 사용자가 미션 수락 (row 생성). status='completed' 면 completed_at 도 자동 세팅. */
   async join(input: ParticipationJoinInput): Promise<Participation | null> {
+    const status = input.status ?? "in_progress";
     const { data, error } = await supabase
       .from("mission_participants")
       .insert({
         mission_id: input.missionId,
         user_id: input.userId,
         instance_date: input.instanceDate,
-        status: "in_progress",
+        status,
         note: input.note ?? null,
+        completed_at: status === "completed" ? new Date().toISOString() : null,
       })
       .select("*")
       .single();

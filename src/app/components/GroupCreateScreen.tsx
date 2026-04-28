@@ -21,7 +21,7 @@ export default function GroupCreateScreen() {
     }
     setError("");
     setSubmitting(true);
-    const group = await createGroup(name.trim(), userId);
+    const group = await createGroup(name.trim());
     setSubmitting(false);
     if (group) {
       navigate("/group-members", { replace: true });

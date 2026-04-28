@@ -20,10 +20,9 @@ export const groupService = {
   /**
    * 그룹 생성: `create_group_with_owner(name)` RPC 호출.
    * 내부적으로 groups INSERT + group_members INSERT + profiles.group_id UPDATE 를
-   * 한 트랜잭션에서 SECURITY DEFINER 로 수행.
-   * creatorId 인자는 store 와의 호환을 위해 유지하지만 서버가 auth.uid() 로 덮어씀.
+   * 한 트랜잭션에서 SECURITY DEFINER 로 수행. 호출자는 인증된 상태여야 함 (서버가 auth.uid() 사용).
    */
-  async create(name: string, _creatorId: string): Promise<Group | null> {
+  async create(name: string): Promise<Group | null> {
     const { data, error } = await supabase.rpc("create_group_with_owner", {
       p_name: name,
     });

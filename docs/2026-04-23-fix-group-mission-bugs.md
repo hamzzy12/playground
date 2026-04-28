@@ -69,22 +69,22 @@
 - **위치**: `src/app/App.tsx:75` + `src/app/components/InProgressMissionScreen.tsx:44~52`
 - **증상**: `InProgressMissionScreen.handleComplete` 가 `console.log` 만 찍고 실제 `updateParticipation` 호출이 없다. 홈에서 이 경로로 `navigate` 하는 코드도 없다 (완료 팝업은 `HomeScreen` 에서 직접 `MissionCompletePopup` 으로 처리). Phase 1 스키마 변경 때 정리되지 않은 잔여.
 - **수정 방향**: 라우트 + 화면 삭제. (혹은 "메시지 + 사진 업로드" 를 `note` 입력 UI 로 재활용해 Phase 1.x 잔여 과제 "참여자 메모 입력" 에 투입)
-- [ ] 결정 (삭제 vs 재활용)
-- [ ] 처리
+- [x] 결정 (2026-04-28: **삭제** 로 결정 — 참여자 메모는 `MissionCompletePopup` 에 입력란 추가로 별도 처리)
+- [x] 처리 (2026-04-28, 커밋 `2de2d18` — `App.tsx` 의 `/mission-in-progress` 라우트 + `InProgressMissionScreen.tsx` 파일 삭제)
 
 ### BUG-6. `MissionCard` 참여자 0명 배지 표기
 
 - **위치**: `src/app/components/molecules/MissionCard.tsx:86`
 - **증상**: `typeof participantCount === "number" && ...` 이어서 0일 때도 "참여 0" 배지가 렌더. 미참여 미션에 공허한 배지.
 - **수정 방향**: `participantCount && participantCount > 0` 조건으로 변경.
-- [ ] 수정
+- [x] 수정 (2026-04-28, 커밋 `2de2d18` — `MissionCard.tsx` 의 `participantCount` 렌더 조건에 `participantCount > 0` 추가)
 
 ### BUG-7. `groupService.create` 미사용 `_creatorId` 인자
 
 - **위치**: `src/app/services/groupService.ts:26`
 - **증상**: 서버가 `auth.uid()` 로 덮어쓰므로 `_creatorId` 는 쓰이지 않는다. 호출자가 "userId 가 load-bearing" 이라고 오해 가능.
 - **수정 방향**: 인자 제거 + `useGroupStore.create` 시그니처도 `(name)` 으로 정리.
-- [ ] 수정
+- [x] 수정 (2026-04-28, 커밋 `2de2d18` — `groupService.create(name)` / `useGroupStore.create(name)` / `GroupCreateScreen` 호출부 정리)
 
 ---
 
@@ -249,5 +249,5 @@ BUG-1~4, BUG-10~14 수정 후 2인 플로우로 "그룹 합류" 까지 정상 �
 
 ## 남은 회귀 포인트 / 다음 확인 대상
 
-- **"미션 만들기" 버튼 복귀 탭**: `MissionProposeScreen` 생성 완료 후 `missionSubTab: 'mine'` 으로 복귀하는데, 내 미션 탭은 이제 "참여한 미션" 이므로 새로 만든 미션은 내가 수락 전까지 이 탭에 안 보임. 사용자가 "왜 안 보임?" 느낄 수 있음 → 복귀 탭을 `'group'` 으로 변경하거나 안내 문구 추가 검토.
-- **"내 미션" 탭의 "미션 만들기" 버튼 유지 여부**: 햄버거 메뉴에 이미 "미션 제안하기" 가 있어 중복. 탭 성격 변경과 함께 제거 검토.
+- ~~**"미션 만들기" 버튼 복귀 탭**~~: 2026-04-28 커밋 `2de2d18` 에서 처리 완료 — 복귀 탭을 `'mine'` → `'group'` 으로 변경하고 `fromManage` state 분기 자체를 제거.
+- ~~**"내 미션" 탭의 "미션 만들기" 버튼 유지 여부**~~: 2026-04-28 커밋 `2de2d18` 에서 결정 — **유지**, 대신 햄버거 메뉴의 "미션제안하기" 항목을 제거하고 메뉴 항목 4개로 재정렬.

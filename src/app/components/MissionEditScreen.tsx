@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMissionStore } from "@/app/stores";
+import type { MissionFrequency, MissionSchedule } from "@/app/types/mission";
 import MissionEditPopup from "./MissionEditPopup";
 
 interface MissionEditState {
@@ -7,6 +8,8 @@ interface MissionEditState {
   title: string;
   description: string;
   reward: number;
+  frequency?: MissionFrequency;
+  schedule?: MissionSchedule;
 }
 
 export default function MissionEditScreen() {
@@ -21,6 +24,8 @@ export default function MissionEditScreen() {
       initialTitle={state?.title ?? ""}
       initialDescription={state?.description ?? ""}
       initialReward={state?.reward ?? 1}
+      initialFrequency={state?.frequency ?? "1회"}
+      initialSchedule={state?.schedule ?? null}
       onClose={() => navigate(-1)}
       onConfirm={async (data) => {
         if (state?.missionId) {
@@ -28,6 +33,8 @@ export default function MissionEditScreen() {
             title: data.title,
             subtitle: data.description,
             reward: data.reward,
+            frequency: data.frequency,
+            schedule: data.schedule,
           });
         }
         navigate(-1);
