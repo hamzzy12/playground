@@ -14,7 +14,7 @@
 
 ---
 
-## 현재 진행 상황 (2026-04-22 기준)
+## 현재 진행 상황 (2026-04-29 기준)
 
 ### ✅ 완료
 
@@ -25,26 +25,43 @@
 - 미션 기본 CRUD, Realtime 재조회, 프로필 이미지/테두리 선택
 - 개발 환경(`.env.example`, README, pre-commit)
 
-**Phase 1 — 그룹 기반 미션 시스템 (1차 2026-04-21 완료, 상세: [docs/2026-04-21-group-mission.md](./2026-04-21-group-mission.md))**
+**Phase 1 — 그룹 기반 미션 시스템 (상세: [docs/2026-04-21-group-mission.md](./2026-04-21-group-mission.md))**
 - 데이터 모델 재설계: `missions.accepter_id/status` 폐기 + `mission_participants` 신설 (1 미션 : N 참여자, 반복 미션은 `instance_date` 단위)
 - 서비스/스토어: `participationService` 신설, `groupService` / `inviteCodeService` 확장, `useGroupStore` 신설
-- HomeScreen 서브탭 "그룹 미션 / 내 미션" 재구성, `MissionCard` 가 본인 참여 상태 반영
+- HomeScreen 서브탭 "내 미션 / 그룹 미션" + `MissionCard` 가 본인 참여 상태 반영
 - 그룹 생성(`/group-create`) · 멤버(`/group-members`) · 온보딩(`/group-onboarding`) 화면 신설
-- 초대코드 발급/복사 + 딥링크(`/invitation-signup?code=XXX`)
+- 초대코드 발급/복사 + 딥링크
 - 참여자 상태 모달(`MissionParticipantsModal`) — "미션 × 날짜" 단위
-- Realtime 구독을 `group_id` 필터로 좁힘 (missions 테이블 한정)
+- Realtime 구독을 `group_id` 필터로 좁힘
 
-### ⚠️ 부분 구현 / Phase 1.x 남은 과제
+**Phase 1.x — 후속 보강 (2026-04-23 ~ 04-29)**
+- 초대 플로우 재설계 — 로그인 전 코드 입력 → OAuth → `/invitation?code=` 자동 이동, ProtectedRoute 통합 ([docs/2026-04-23-fix-group-mission-bugs.md](./2026-04-23-fix-group-mission-bugs.md))
+- `validate_invite_code` / `preview_invite` SECURITY DEFINER RPC 추가 — anon 검증 + 비멤버 그룹 preview (RLS 닭달걀 우회)
+- 다회용 초대코드 — `markUsed` / `used_by` 필터 폐기
+- **그룹 탈퇴 UI** — `GroupMembersScreen` 하단 + 확인 모달 + 스토어 clear → `/group-onboarding`
+- **미션 카드 UI 통합** — "내 미션" 탭 의미를 "오늘 참여 중인 미션" 으로 변경, 모든 카드를 `MissionCard` 로 단일화
+- **카드 ⋮ 메뉴** — "수정하기" (제안자만) / "참여 취소" (본인 in_progress) / "기록 보기" (반복 미션) 권한별 분기
+- **참여자 메모 입력** — `MissionCompletePopup` 한 줄 입력란 (코드 반영, 동작 검증 미완)
+- **반복 미션 스케줄 정착** ([docs/2026-04-28-recurring-missions.md](./2026-04-28-recurring-missions.md))
+  - `missions.schedule JSONB` 컬럼 추가 (매주: `{days: 0~6}`, 매월: `{monthly: {1~4: [0~6]}}`)
+  - `WeekdaySelector` / `MonthlySelector` 결과를 실제로 저장 + `isMissionActiveOn` 필터로 화면 노출 제어
+  - **schedule 편집 지원** — `MissionEditPopup` 에서 frequency + selector 결과 수정 가능
+  - **일자별 기록 모달** (`MissionRecordModal`) — 미션 생성일~오늘 범위, 페이지네이션 5일 단위, 비활성 일자 (이전 스케줄) 라벨로 데이터 보존
+  - **과거 일자 보충 입력** — 모달에서 활성 미참여 일자에 "수행함" 클릭 → `participationService.join({status: 'completed'})` 즉시 INSERT
+- 공용 안내 모달 `AlertModal` (브라우저 alert 대체)
 
-- **반복 미션 일자별 카드**: 현재 "오늘" 인스턴스 1건만 렌더. 최근 5일 + 과거 참여 입력 UI 미구현 (DB/서비스는 `instance_date` 임의 지정 가능)
-- **참여 취소 / 메모 입력 UI**: `removeParticipation` 액션과 `updateNote` 는 있으나 UI 진입점 없음
+### ⚠️ 부분 구현 / 미검증
+
+- **2인 플로우 Realtime 검증**: 그룹 합류는 ✅. A 가 만든 미션이 B 의 화면에 실시간으로 반영되는지, B 의 수락/완료가 A 에게 실시간 반영되는지 미검증
+- **참여자 메모 입력**: 코드는 반영됐으나 사용자 검증 시 동작 의심됨 — 재현/디버깅 필요
+- **반복 미션 스케줄 시스템 브라우저 검증**: Phase A 일부만 검증, A' / B 미검증 (사용자 진행 중에 일단 종료)
 - **상점 탭**: 여전히 하드코딩 (Phase 2)
-- **랭킹 뷰**: `ranking_view` 는 `mission_participants.completed` 기준으로 재작성됐지만 `RankingScreen` 은 정적 데이터
+- **랭킹 뷰**: `ranking_view` 는 존재하지만 `RankingScreen` 은 정적 데이터
 - **프로필 코인**: 표시만, 증감 로직 없음 (Phase 2)
 
-### ❌ 미구현
+### ❌ 미구현 / 미수정
 
-- 그룹 탈퇴 UI (Phase 4)
+- **UI 깨짐 수정**: 모달(`MissionParticipantsModal`, `GroupMembersScreen` 등) / 참여자 수 배지 위치 / 393×852 고정 레이아웃 이탈 부분. Phase 1.x 잔여
 - 상점 DB 연동 + 코인 경제 (Phase 2)
 - 랭킹/리포트 DB 연동 (Phase 3)
 - 알림 기능 (현재 메뉴는 외부 링크만)
@@ -81,25 +98,26 @@
 - [x] Realtime: `missions` 는 `filter: group_id=eq.${groupId}`, `mission_participants` 는 전체 + RLS 차단
 
 ### 프론트엔드 ✅ (일부 ⚠️)
-- [x] HomeScreen 서브탭 "그룹 미션 / 내 미션" 재구성
-- [x] `MissionCard` 가 본인 참여 상태에 따라 색/버튼 변경, 참여자 수 배지 표시
-- [x] `MissionParticipantsModal` — `ProductIconSelectModal` 스타일 재사용, "미션 × 날짜" 단위
+- [x] HomeScreen 서브탭 "내 미션 / 그룹 미션" 재구성 + 카드 UI 통일 + 카드 ⋮ 메뉴
+- [x] `MissionCard` 가 본인 참여 상태에 따라 색/버튼 변경, 참여자 수 배지 표시 (0명일 때 미노출)
+- [x] `MissionParticipantsModal` — "미션 × 날짜" 단위
 - [x] 미션 수락 / 완료 플로우 (수락 버튼 → in_progress → 완료 팝업)
 - [x] `GroupOnboardingScreen` / `GroupCreateScreen` / `GroupMembersScreen`
-- [x] 초대코드 발급/복사 + 딥링크 복사
-- [x] `InvitationSignupScreen` 에 `?code=` 쿼리파라미터 자동 입력
-- [x] 햄버거 메뉴에 "내 그룹" 항목
-- [ ] **반복 미션 일자별 카드** — 최근 5일치 + 과거 참여 입력 UI (현재 "오늘" 1건만)
-- [ ] **참여 취소 / 참여자 메모 입력** UI 진입점
+- [x] 초대코드 발급/복사 + 딥링크 복사 (`/invitation?code=` 으로 일원화)
+- [x] 햄버거 메뉴에 "내 그룹" 항목 (미션제안하기 항목은 제거 — "내 미션" 탭 버튼과 중복)
+- [x] **반복 미션 일자별 기록** — `MissionRecordModal` (페이지네이션 + 과거 보충 입력)
+- [x] **참여 취소** — 카드 ⋮ 메뉴 (in_progress 일 때만)
+- [x] **참여자 메모 입력** — `MissionCompletePopup` 한 줄 입력란 (⚠️ 동작 검증 의심, 재현 필요)
+- [x] **그룹 탈퇴 UI** — `GroupMembersScreen` 하단 + 확인 모달
+- [x] **매주/매월 스케줄 의미 부여** — `WeekdaySelector` / `MonthlySelector` 결과가 실제로 저장 + 화면 노출 필터에 반영
+- [x] **schedule 편집 지원** — `MissionEditPopup`
 
 ### Phase 1.x — 남은 과제 (우선순위 순)
-1. **2인 테스트** — 그룹 초대/수락, Realtime 동기화 (A: 그룹 생성 → 초대코드 공유 → B: 가입 → A/B 양쪽에서 미션 제안·수락·완료가 실시간으로 반영되는지)
-2. **UI 깨짐 수정** — 모달(`MissionParticipantsModal` 등) · 참여자 수 배지 위치 등 시각적 깨짐
-3. 반복 미션 5일치 카드 + 과거 일자 참여 UI
-4. 참여자 메모(`note`) 입력 — `MissionCompletePopup` 에 입력란 추가
-5. 참여 취소 버튼 — 참여자 모달의 본인 row 에 노출
-6. `/invitation` 기존 플로우 회귀 검증 (신규 스키마 호환)
-7. (낮음) `groups` 테이블 RLS 미스터리 원인 규명 — 현재 `create_group_with_owner` RPC 로 우회 중. 2026-04-22 로그 참고
+1. **참여자 메모 입력 동작 검증 / 디버깅** — 코드는 반영됐으나 의심됨
+2. **UI 깨짐 수정** — 모달 / 참여자 수 배지 위치 / 393×852 고정 레이아웃 이탈 케이스 (실기기 스크린샷 단위로 처리 권장)
+3. **2인 플로우 Realtime 검증** — A 가 만든 미션이 B 화면에 실시간 반영되는지, B 의 수락/완료가 A 에게 반영되는지
+4. **반복 미션 시스템 브라우저 검증** — 매주/매월 스케줄, schedule 편집, 기록 모달, 과거 보충 입력 (`docs/2026-04-28-recurring-missions.md` 의 검증 시나리오 참고)
+5. (낮음) `groups` 테이블 RLS 미스터리 원인 규명 — 현재 `create_group_with_owner` RPC 로 우회 중. `docs/2026-04-21-group-mission.md` 하단 참고
 
 ---
 
@@ -197,6 +215,7 @@
 - Phase 5는 1~3 안정화 후
 
 ## 변경 이력
+- 2026-04-29: Phase 1.x 후속 작업 반영 — 그룹 탈퇴 UI, 미션 카드 통합 + ⋮ 메뉴, 반복 미션 스케줄 정착(매주/매월 요일·주차), schedule 편집, 일자별 기록 모달 + 과거 보충 입력. 상세: `docs/2026-04-23-fix-group-mission-bugs.md`, `docs/2026-04-28-recurring-missions.md`. UI 깨짐 / 참여자 메모 검증 / 2인 Realtime 검증 / 반복 미션 브라우저 검증은 잔여.
 - 2026-04-22: 브라우저 수동 테스트 후 1인 플로우 통과 기록, Phase 1.x 리스트에 2인 테스트 + UI 깨짐 수정 + RLS 미스터리 추가. 스키마에 role GRANT, 프로필 백필, `create_group_with_owner` SECURITY DEFINER RPC 추가 (2026-04-21 개발 일지 하단 참고).
 - 2026-04-22: Phase 1 1차 구현 완료 반영 — 기획 결정 확정, 백엔드/프론트엔드 체크리스트 갱신, Phase 1.x 잔여 과제 분리. 상세 개발 일지 링크 추가.
 - 2026-04-20: 최초 작성. Phase 0 완료, Phase 1부터 진행 예정.
