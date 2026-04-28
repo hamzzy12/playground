@@ -9,6 +9,8 @@ interface MissionParticipantsModalProps {
   members: GroupMember[];
   /** 반복 미션: 표시할 일자. 1회성: undefined */
   instanceDate?: string;
+  /** 본인 row 표시(`(나)` 라벨)용. 참여 취소는 미션 카드 ⋮ 메뉴로 분리됨. */
+  currentUserId?: string;
   onClose: () => void;
 }
 
@@ -29,6 +31,7 @@ export default function MissionParticipantsModal({
   participations,
   members,
   instanceDate,
+  currentUserId,
   onClose,
 }: MissionParticipantsModalProps) {
   const memberById = new Map(members.map((m) => [m.userId, m]));
@@ -70,6 +73,7 @@ export default function MissionParticipantsModal({
         ) : (
           participations.map((p) => {
             const member = memberById.get(p.userId);
+            const isMine = currentUserId !== undefined && p.userId === currentUserId;
             return (
               <div
                 key={p.id}
@@ -87,6 +91,9 @@ export default function MissionParticipantsModal({
                 <div className="flex-1 min-w-0">
                   <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[16px] text-[#492607] truncate">
                     {member?.name ?? "(탈퇴한 멤버)"}
+                    {isMine && (
+                      <span className="ml-[6px] text-[12px] text-[#7b3a00]">(나)</span>
+                    )}
                   </p>
                   {p.note && (
                     <p className="font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[13px] text-[#733e14] truncate">

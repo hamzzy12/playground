@@ -5,7 +5,6 @@ import InvitationScreen from "@/app/components/InvitationScreen";
 import InvitationSignupScreen from "@/app/components/InvitationSignupScreen";
 import HomeScreen from "@/app/components/HomeScreen";
 import MissionProposeScreen from "@/app/components/MissionProposeScreen";
-import InProgressMissionScreen from "@/app/components/InProgressMissionScreen";
 import RankingScreen from "@/app/components/RankingScreen";
 import MissionEditScreen from "@/app/components/MissionEditScreen";
 import GrowthReportScreen from "@/app/components/GrowthReportScreen";
@@ -72,7 +71,6 @@ export default function App() {
           <Route path="/group-create" element={<ProtectedRoute><GroupCreateScreen /></ProtectedRoute>} />
           <Route path="/group-members" element={<ProtectedRoute><GroupMembersScreen /></ProtectedRoute>} />
           <Route path="/mission-propose" element={<ProtectedRoute><MissionProposeScreen /></ProtectedRoute>} />
-          <Route path="/mission-in-progress" element={<ProtectedRoute><InProgressMissionScreen /></ProtectedRoute>} />
           <Route path="/ranking" element={<ProtectedRoute><RankingScreen /></ProtectedRoute>} />
           <Route path="/mission-edit" element={<ProtectedRoute><MissionEditScreen /></ProtectedRoute>} />
           <Route path="/growth-report" element={<ProtectedRoute><GrowthReportScreen /></ProtectedRoute>} />

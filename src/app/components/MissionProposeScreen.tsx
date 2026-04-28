@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import imgImage17 from "figma:asset/81d088beb551828e97404c314253141a6045d342.png";
 import imgImage14 from "figma:asset/6f18eead9b572899ad877ca3e47a89c821b19b36.png";
 import imgImage63 from "figma:asset/67b776f37d98a218bd6499f227365db338cd0a13.png";
@@ -16,8 +16,6 @@ type DayType = '월' | '화' | '수' | '목' | '금' | '토' | '일';
 
 export default function MissionProposeScreen() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const fromManage = (location.state as { from?: string } | null)?.from === 'home-manage';
   const userId = useAuthStore((s) => s.user?.id);
   const groupId = useGroupStore((s) => s.currentGroup?.id);
   const addMission = useMissionStore((s) => s.add);
@@ -88,11 +86,11 @@ export default function MissionProposeScreen() {
 
   const handleConfirmAlert = () => {
     setShowAlert(false);
-    navigate('/home', fromManage ? { state: { missionSubTab: 'mine' } } : undefined);
+    navigate('/home', { state: { missionSubTab: 'group' } });
   };
 
   const handleClose = () => {
-    navigate('/home', fromManage ? { state: { missionSubTab: 'mine' } } : undefined);
+    navigate('/home', { state: { missionSubTab: 'group' } });
   };
 
   return (

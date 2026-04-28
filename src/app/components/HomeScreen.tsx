@@ -105,6 +105,7 @@ export default function HomeScreen() {
   const participations = useMissionStore((s) => s.participations);
   const joinMission = useMissionStore((s) => s.join);
   const updateParticipation = useMissionStore((s) => s.updateParticipation);
+  const removeParticipation = useMissionStore((s) => s.removeParticipation);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"mission" | "shop">("mission");
@@ -193,9 +194,9 @@ export default function HomeScreen() {
     }
   };
 
-  const handleMissionCompleteConfirm = async () => {
+  const handleMissionCompleteConfirm = async (note?: string) => {
     if (completingParticipationId) {
-      await updateParticipation(completingParticipationId, "completed");
+      await updateParticipation(completingParticipationId, "completed", note);
       setCompletingParticipationId(null);
     }
     setShowCompletePopup(false);
@@ -223,7 +224,7 @@ export default function HomeScreen() {
         participantCount={all.length}
         onButtonClick={() => handleMissionButtonClick(mission)}
         onParticipantBadgeClick={() => setShowParticipantsModal({ mission, instanceDate })}
-        onMenuClick={
+        onEdit={
           isProposer
             ? () =>
                 navigate("/mission-edit", {
@@ -234,6 +235,11 @@ export default function HomeScreen() {
                     reward: mission.reward,
                   },
                 })
+            : undefined
+        }
+        onCancel={
+          mine?.status === "in_progress"
+            ? () => removeParticipation(mine.id)
             : undefined
         }
       />
@@ -352,23 +358,9 @@ export default function HomeScreen() {
               </div>
 
               <div className="absolute left-[10px] top-[10px] z-10">
-                {/* 미션제안하기 */}
-                <div
-                  className="absolute top-0 left-0 w-[180px] h-[39px] cursor-pointer"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    navigate("/mission-propose");
-                  }}
-                >
-                  <div className="absolute inset-0 bg-[#feb700] border border-solid border-white rounded-[8px]" />
-                  <p className="absolute inset-0 flex items-center justify-center font-['ONE_Mobile_POP_OTF:Regular',sans-serif] text-[18px] text-[#492607]">
-                    미션제안하기
-                  </p>
-                </div>
-
                 {/* 내 그룹 */}
                 <div
-                  className="absolute top-[48px] left-0 w-[180px] h-[38px] cursor-pointer"
+                  className="absolute top-0 left-0 w-[180px] h-[38px] cursor-pointer"
                   onClick={() => {
                     setIsMenuOpen(false);
                     navigate("/group-members");
@@ -382,7 +374,7 @@ export default function HomeScreen() {
 
                 {/* 만든개발자 */}
                 <div
-                  className="absolute top-[96px] left-0 w-[180px] h-[38px] cursor-pointer"
+                  className="absolute top-[48px] left-0 w-[180px] h-[38px] cursor-pointer"
                   onClick={() => {
                     setIsMenuOpen(false);
                     setShowDeveloperPopup(true);
@@ -396,7 +388,7 @@ export default function HomeScreen() {
 
                 {/* 알림 */}
                 <div
-                  className="absolute top-[144px] left-0 w-[180px] h-[38px] cursor-pointer"
+                  className="absolute top-[96px] left-0 w-[180px] h-[38px] cursor-pointer"
                   onClick={() => {
                     setIsMenuOpen(false);
                     window.open("https://cafe.naver.com/f-e/cafes/31663026/menus/1?viewType=L", "_blank");
@@ -410,7 +402,7 @@ export default function HomeScreen() {
 
                 {/* Logout */}
                 <div
-                  className="absolute top-[192px] left-0 w-[180px] h-[38px] cursor-pointer"
+                  className="absolute top-[144px] left-0 w-[180px] h-[38px] cursor-pointer"
                   onClick={async () => { await signOut(); navigate("/"); }}
                 >
                   <img alt="" className="absolute inset-0 w-full h-full" src={imgImage41} />
@@ -505,7 +497,7 @@ export default function HomeScreen() {
             <>
               <button
                 className="relative w-[361px] h-[47px] mx-auto mb-[15px] cursor-pointer active:scale-95 transition-transform"
-                onClick={() => navigate("/mission-propose", { state: { from: "home-manage" } })}
+                onClick={() => navigate("/mission-propose")}
               >
                 <div className="absolute inset-0 top-[5px] bg-[#45270b] rounded-[8px]" />
                 <div className="absolute inset-0 bg-[#feb700] rounded-[8px]" />
@@ -579,6 +571,7 @@ export default function HomeScreen() {
           participations={modalData.participations}
           members={members}
           instanceDate={modalData.instanceDate}
+          currentUserId={userId}
           onClose={() => setShowParticipantsModal(null)}
         />
       )}
