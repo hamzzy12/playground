@@ -7,8 +7,11 @@ import imgImage54 from "figma:asset/7717fbadfaff2519242403e5e5201a7517a295a2.png
 import WeekdaySelector from "@/imports/WeekdaySelector";
 import MonthlySelector, { WeeklySchedule } from "@/imports/MonthlySelector";
 import MissionCreatedAlert from "./MissionCreatedAlert";
+import AlertModal from "./AlertModal";
 import IconSelectModal from "./IconSelectModal";
 import { useAuthStore, useGroupStore, useMissionStore } from "@/app/stores";
+import type { MissionSchedule } from "@/app/types/mission";
+import { buildSchedule } from "@/app/constants/mission";
 
 type FrequencyType = '1회' | '매일' | '매주' | '매월';
 type WeekType = '첫째주' | '둘째주' | '셋째주' | '넷째주';
@@ -27,6 +30,7 @@ export default function MissionProposeScreen() {
   const [isWeekdaySelectorOpen, setIsWeekdaySelectorOpen] = useState(false);
   const [isMonthlySelectorOpen, setIsMonthlySelectorOpen] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 월선택 팝업 상태 관리
   const [selectedWeeks, setSelectedWeeks] = useState<WeekType[]>([]);
@@ -52,24 +56,41 @@ export default function MissionProposeScreen() {
 
   const handleCreateMission = () => {
     if (!missionContent) {
-      alert('미션 내용을 입력해주세요!');
+      setErrorMessage('미션 내용을 입력해주세요.');
       return;
     }
 
     if (!rewardCoins || parseInt(rewardCoins) <= 0) {
-      alert('보상 코인을 입력해주세요!');
+      setErrorMessage('보상 코인을 입력해주세요.');
       return;
     }
 
     if (!userId) {
-      alert('로그인이 필요합니다.');
+      setErrorMessage('로그인이 필요합니다.');
       return;
     }
 
     if (!groupId) {
-      alert('그룹이 없습니다. 먼저 그룹을 만들거나 참여해주세요.');
-      navigate('/group-onboarding');
+      setErrorMessage('그룹이 없습니다. 먼저 그룹을 만들거나 참여해주세요.');
       return;
+    }
+
+    // 매주/매월 스케줄 검증 — 비어있으면 차단 (페이지 이탈 없이 모달 안내)
+    const schedule = buildSchedule(selectedFrequency, weeklySelectedDays, weeklySchedule);
+    if (selectedFrequency === '매주') {
+      const days = schedule && 'days' in schedule ? schedule.days : [];
+      if (days.length === 0) {
+        setErrorMessage('매주 미션은 요일을 1개 이상 선택해주세요.');
+        return;
+      }
+    }
+    if (selectedFrequency === '매월') {
+      const monthly = schedule && 'monthly' in schedule ? schedule.monthly : {};
+      const totalDays = Object.values(monthly).reduce((sum, arr) => sum + arr.length, 0);
+      if (totalDays === 0) {
+        setErrorMessage('매월 미션은 주차와 요일을 1개 이상 선택해주세요.');
+        return;
+      }
     }
 
     addMission(userId, groupId, {
@@ -77,7 +98,8 @@ export default function MissionProposeScreen() {
       subtitle: additionalContent || '미션을 완료해보세요!',
       reward: parseInt(rewardCoins),
       frequency: selectedFrequency,
-      dueDate: dueDate || undefined
+      schedule,
+      dueDate: dueDate || undefined,
     });
 
     // 알림 팝업 표시
@@ -291,6 +313,14 @@ export default function MissionProposeScreen() {
       {/* 미션 생성 완료 알림 팝업 */}
       {showAlert && (
         <MissionCreatedAlert onConfirm={handleConfirmAlert} />
+      )}
+
+      {/* 검증 실패 안내 모달 (alert 대체) */}
+      {errorMessage && (
+        <AlertModal
+          message={errorMessage}
+          onClose={() => setErrorMessage(null)}
+        />
       )}
     </div>
   );

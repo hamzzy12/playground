@@ -3,13 +3,21 @@ import imgImage17 from "figma:asset/81d088beb551828e97404c314253141a6045d342.png
 import imgImage14 from "figma:asset/6f18eead9b572899ad877ca3e47a89c821b19b36.png";
 import imgImage54 from "figma:asset/7717fbadfaff2519242403e5e5201a7517a295a2.png";
 import ProductIconSelectModal from "./ProductIconSelectModal";
+import AlertModal from "./AlertModal";
+import WeekdaySelector from "@/imports/WeekdaySelector";
+import MonthlySelector, { WeeklySchedule } from "@/imports/MonthlySelector";
+import type { MissionFrequency, MissionSchedule } from "@/app/types/mission";
+import { buildSchedule, parseScheduleToLabels } from "@/app/constants/mission";
+
+type DayLabel = '월' | '화' | '수' | '목' | '금' | '토' | '일';
 
 interface MissionEditPopupProps {
   onClose?: () => void;
   onConfirm?: (data: {
     title: string;
     description: string;
-    frequency: string;
+    frequency: MissionFrequency;
+    schedule: MissionSchedule;
     targetDate: string;
     reward: number;
     iconSrc: string | null;
@@ -18,19 +26,26 @@ interface MissionEditPopupProps {
   initialTitle: string;
   initialDescription: string;
   initialReward: number;
+  initialFrequency?: MissionFrequency;
+  initialSchedule?: MissionSchedule;
 }
 
-const FREQUENCIES = ["1회", "매일", "매주", "매월"];
+const FREQUENCIES: MissionFrequency[] = ["1회", "매일", "매주", "매월"];
 
 export default function MissionEditPopup({
-  onClose,
+  onClose: _onClose,
   onConfirm,
   onDelete,
   initialTitle,
   initialDescription,
   initialReward,
+  initialFrequency = "1회",
+  initialSchedule = null,
 }: MissionEditPopupProps) {
-  const [frequency, setFrequency] = useState("1회");
+  // initialSchedule 을 한글 라벨 state 로 풀어서 selector 에 초기값 전달
+  const initialLabels = parseScheduleToLabels(initialSchedule);
+
+  const [frequency, setFrequency] = useState<MissionFrequency>(initialFrequency);
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
   const [targetDate, setTargetDate] = useState("");
@@ -40,17 +55,56 @@ export default function MissionEditPopup({
   const [selectedIconSrc, setSelectedIconSrc] = useState<string | null>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
+  // 매주 / 매월 모달 + 스케줄 state
+  const [isWeekdaySelectorOpen, setIsWeekdaySelectorOpen] = useState(false);
+  const [isMonthlySelectorOpen, setIsMonthlySelectorOpen] = useState(false);
+  const [weeklySelectedDays, setWeeklySelectedDays] = useState<DayLabel[]>(
+    initialLabels.days,
+  );
+  const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule>(
+    initialLabels.weeklySchedule as WeeklySchedule,
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleFrequencyClick = (freq: MissionFrequency) => {
+    setFrequency(freq);
+    if (freq === '매주') setIsWeekdaySelectorOpen(true);
+    if (freq === '매월') setIsMonthlySelectorOpen(true);
+  };
+
   const handleConfirm = () => {
-    if (title.trim()) {
-      onConfirm?.({
-        title,
-        description,
-        frequency,
-        targetDate,
-        reward: Number(reward) || 1,
-        iconSrc: selectedIconSrc,
-      });
+    if (!title.trim()) {
+      setErrorMessage('미션 제목을 입력해주세요.');
+      return;
     }
+
+    const schedule = buildSchedule(frequency, weeklySelectedDays, weeklySchedule);
+
+    if (frequency === '매주') {
+      const days = schedule && 'days' in schedule ? schedule.days : [];
+      if (days.length === 0) {
+        setErrorMessage('매주 미션은 요일을 1개 이상 선택해주세요.');
+        return;
+      }
+    }
+    if (frequency === '매월') {
+      const monthly = schedule && 'monthly' in schedule ? schedule.monthly : {};
+      const totalDays = Object.values(monthly).reduce((sum, arr) => sum + arr.length, 0);
+      if (totalDays === 0) {
+        setErrorMessage('매월 미션은 주차와 요일을 1개 이상 선택해주세요.');
+        return;
+      }
+    }
+
+    onConfirm?.({
+      title,
+      description,
+      frequency,
+      schedule,
+      targetDate,
+      reward: Number(reward) || 1,
+      iconSrc: selectedIconSrc,
+    });
   };
 
   return (
@@ -94,7 +148,7 @@ export default function MissionEditPopup({
                   ? "bg-[#ffe400] text-[#492607]"
                   : "bg-[#733e14] text-white/30"
               }`}
-              onClick={() => setFrequency(freq)}
+              onClick={() => handleFrequencyClick(freq)}
             >
               {freq}
             </button>
@@ -201,6 +255,48 @@ export default function MissionEditPopup({
               setSelectedIconSrc(iconSrc);
             }}
             onClose={() => setIsIconSelectOpen(false)}
+          />
+        )}
+
+        {/* 매주 요일 선택 모달 */}
+        {isWeekdaySelectorOpen && (
+          <div
+            className="fixed inset-0 z-50"
+            onClick={() => setIsWeekdaySelectorOpen(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <WeekdaySelector
+                onClose={() => setIsWeekdaySelectorOpen(false)}
+                selectedDays={weeklySelectedDays}
+                onDaysChange={setWeeklySelectedDays}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 매월 주차/요일 선택 모달 */}
+        {isMonthlySelectorOpen && (
+          <div
+            className="fixed inset-0 z-50"
+            onClick={() => setIsMonthlySelectorOpen(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <MonthlySelector
+                onClose={() => setIsMonthlySelectorOpen(false)}
+                selectedWeeks={Object.keys(weeklySchedule) as ('첫째주' | '둘째주' | '셋째주' | '넷째주')[]}
+                weeklySchedule={weeklySchedule}
+                onWeeksChange={() => { /* MonthlySelector 가 weeklySchedule 로 구조 관리 — onScheduleChange 만 사용 */ }}
+                onScheduleChange={setWeeklySchedule}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 검증 실패 안내 모달 */}
+        {errorMessage && (
+          <AlertModal
+            message={errorMessage}
+            onClose={() => setErrorMessage(null)}
           />
         )}
       </div>

@@ -23,6 +23,8 @@ export interface MissionCardProps {
   onEdit?: () => void;
   /** 제공되면 ⋮ 메뉴에 "참여 취소" 항목 노출. 본인이 in_progress 인 경우에만 주입. */
   onCancel?: () => void;
+  /** 제공되면 ⋮ 메뉴에 "기록 보기" 항목 노출. 반복 미션(1회 제외) 에만 주입. */
+  onShowRecord?: () => void;
 }
 
 /**
@@ -46,8 +48,9 @@ export const MissionCard: React.FC<MissionCardProps> = ({
   onParticipantBadgeClick,
   onEdit,
   onCancel,
+  onShowRecord,
 }) => {
-  const hasMenu = Boolean(onEdit || onCancel);
+  const hasMenu = Boolean(onEdit || onCancel || onShowRecord);
   const { bgColor, barColor } = getColorsForParticipation(myStatus);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -156,6 +159,18 @@ export const MissionCard: React.FC<MissionCardProps> = ({
                     }}
                   >
                     수정하기
+                  </button>
+                )}
+                {onShowRecord && (
+                  <button
+                    className="w-full text-left px-[14px] py-[10px] text-[15px] text-[#492607] hover:bg-[#f5f0e2] active:bg-[#ebe2cc] font-['ONE_Mobile_POP_OTF:Regular',sans-serif]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onShowRecord();
+                    }}
+                  >
+                    기록 보기
                   </button>
                 )}
                 {onCancel && (

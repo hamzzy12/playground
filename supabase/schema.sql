@@ -96,6 +96,10 @@ CREATE TABLE missions (
   reward INTEGER DEFAULT 1 CHECK (reward >= 0 AND reward <= 99),
   frequency TEXT NOT NULL DEFAULT '1회'
     CHECK (frequency IN ('1회', '매일', '매주', '매월')),
+  -- 매주: { "days": [요일번호 0~6] }
+  -- 매월: { "monthly": { "주차(1~4)": [요일번호 0~6] } }
+  -- 1회 / 매일: NULL
+  schedule JSONB,
   due_date DATE,
   icon_src TEXT,
   enabled BOOLEAN DEFAULT TRUE,

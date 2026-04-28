@@ -1,5 +1,9 @@
 import { supabase } from "@/lib/supabase";
-import type { Mission, MissionFrequency } from "@/app/types/mission";
+import type {
+  Mission,
+  MissionFrequency,
+  MissionSchedule,
+} from "@/app/types/mission";
 
 interface MissionRow {
   id: string;
@@ -9,6 +13,7 @@ interface MissionRow {
   subtitle: string | null;
   reward: number;
   frequency: MissionFrequency;
+  schedule: MissionSchedule | null;
   due_date: string | null;
   icon_src: string | null;
   enabled: boolean;
@@ -25,6 +30,7 @@ function rowToMission(row: MissionRow): Mission {
     subtitle: row.subtitle ?? "",
     reward: row.reward,
     frequency: row.frequency,
+    schedule: row.schedule ?? null,
     dueDate: row.due_date ?? undefined,
     iconSrc: row.icon_src ?? undefined,
     enabled: row.enabled ?? true,
@@ -39,6 +45,7 @@ export interface MissionCreateInput {
   subtitle?: string;
   reward?: number;
   frequency?: MissionFrequency;
+  schedule?: MissionSchedule;
   dueDate?: string | null;
   iconSrc?: string | null;
 }
@@ -48,6 +55,7 @@ export interface MissionUpdateInput {
   subtitle?: string;
   reward?: number;
   frequency?: MissionFrequency;
+  schedule?: MissionSchedule;
   dueDate?: string | null;
   iconSrc?: string | null;
 }
@@ -91,6 +99,7 @@ export const missionService = {
         subtitle: input.subtitle ?? null,
         reward: input.reward ?? 1,
         frequency: input.frequency ?? "1회",
+        schedule: input.schedule ?? null,
         due_date: input.dueDate ?? null,
         icon_src: input.iconSrc ?? null,
       })
@@ -109,6 +118,7 @@ export const missionService = {
     if (updates.subtitle !== undefined) dbUpdates.subtitle = updates.subtitle;
     if (updates.reward !== undefined) dbUpdates.reward = updates.reward;
     if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
+    if (updates.schedule !== undefined) dbUpdates.schedule = updates.schedule;
     if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
     if (updates.iconSrc !== undefined) dbUpdates.icon_src = updates.iconSrc;
     const { error } = await supabase

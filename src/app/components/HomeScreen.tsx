@@ -8,6 +8,7 @@ import {
   useGroupStore,
 } from "@/app/stores";
 import type { Mission, Participation } from "@/app/types/mission";
+import { isMissionActiveOn } from "@/app/constants/mission";
 import { useTodayDate } from "@/app/hooks/useTodayDate";
 import { MissionCard } from "@/app/components/molecules/MissionCard";
 import { ShopItem } from "@/app/components/molecules/ShopItem";
@@ -19,6 +20,7 @@ import DeliveredPopup from "./DeliveredPopup";
 import DeveloperInfoPopup from "./DeveloperInfoPopup";
 import ProfileSelectModal from "./ProfileSelectModal";
 import MissionParticipantsModal from "./MissionParticipantsModal";
+import MissionRecordModal from "./MissionRecordModal";
 import { PROFILE_MAP } from "@/app/constants/profile";
 import svgPaths from "@/imports/svg-pjyub6r4mi";
 import svgPathsMenu from "@/imports/svg-kmzz9f9dmz";
@@ -120,6 +122,8 @@ export default function HomeScreen() {
     instanceDate: string | null;
   } | null>(null);
 
+  const [showRecordModal, setShowRecordModal] = useState<Mission | null>(null);
+
   const [showExchangePopup, setShowExchangePopup] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<{ id: string; title: string; price: string } | null>(null);
   const [shippingProducts, setShippingProducts] = useState<string[]>([]);
@@ -149,18 +153,22 @@ export default function HomeScreen() {
     setIsInitialRender(false);
   }, []);
 
-  // 그룹 미션 탭: 활성화된 미션만, 최신순
-  const groupMissions = useMemo(
-    () => missions.filter((m) => m.enabled).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [missions],
-  );
+  // 그룹 미션 탭: 활성화 + 오늘 스케줄에 해당하는 미션만, 최신순
+  const groupMissions = useMemo(() => {
+    const today = new Date();
+    return missions
+      .filter((m) => m.enabled && isMissionActiveOn(m, today))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [missions]);
 
-  // 내 미션 탭: 내가 "오늘 인스턴스" 에 참여한 미션만 (그룹 탭과 같은 MissionCard 로 렌더)
+  // 내 미션 탭: 오늘 스케줄에 해당하면서 내가 "오늘 인스턴스" 에 참여한 미션만
   const myMissions = useMemo(() => {
     if (!userId) return [];
+    const today = new Date();
     return missions
       .filter((m) => {
         if (!m.enabled) return false;
+        if (!isMissionActiveOn(m, today)) return false;
         const instanceDate = resolveInstanceDate(m);
         return participations.some(
           (p) => p.missionId === m.id && p.userId === userId && p.instanceDate === instanceDate,
@@ -233,6 +241,8 @@ export default function HomeScreen() {
                     title: mission.title,
                     description: mission.subtitle,
                     reward: mission.reward,
+                    frequency: mission.frequency,
+                    schedule: mission.schedule,
                   },
                 })
             : undefined
@@ -240,6 +250,11 @@ export default function HomeScreen() {
         onCancel={
           mine?.status === "in_progress"
             ? () => removeParticipation(mine.id)
+            : undefined
+        }
+        onShowRecord={
+          mission.frequency !== "1회"
+            ? () => setShowRecordModal(mission)
             : undefined
         }
       />
@@ -573,6 +588,23 @@ export default function HomeScreen() {
           instanceDate={modalData.instanceDate}
           currentUserId={userId}
           onClose={() => setShowParticipantsModal(null)}
+        />
+      )}
+
+      {showRecordModal && userId && (
+        <MissionRecordModal
+          mission={showRecordModal}
+          participations={participations.filter((p) => p.missionId === showRecordModal.id)}
+          currentUserId={userId}
+          onCompleteForDate={async (instanceDate) => {
+            await joinMission({
+              missionId: showRecordModal.id,
+              userId,
+              instanceDate,
+              status: "completed",
+            });
+          }}
+          onClose={() => setShowRecordModal(null)}
         />
       )}
 

@@ -3,6 +3,7 @@ import { missionService, participationService } from "@/app/services";
 import type {
   Mission,
   MissionFrequency,
+  MissionSchedule,
   Participation,
   ParticipationStatus,
 } from "@/app/types/mission";
@@ -12,6 +13,7 @@ interface MissionAddInput {
   subtitle: string;
   reward: number;
   frequency?: MissionFrequency;
+  schedule?: MissionSchedule;
   dueDate?: string;
   iconSrc?: string;
 }
@@ -21,6 +23,7 @@ interface MissionUpdateFields {
   subtitle?: string;
   reward?: number;
   frequency?: MissionFrequency;
+  schedule?: MissionSchedule;
   dueDate?: string;
   iconSrc?: string;
 }
@@ -31,6 +34,8 @@ interface JoinInput {
   /** 반복 미션: 해당 일자(YYYY-MM-DD). 1회성: null */
   instanceDate: string | null;
   note?: string;
+  /** 기본 'in_progress'. 과거 일자 보충 입력 시 'completed' 로 바로 생성 */
+  status?: ParticipationStatus;
 }
 
 interface MissionState {
@@ -82,6 +87,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
       subtitle: input.subtitle,
       reward: input.reward,
       frequency: input.frequency,
+      schedule: input.schedule,
       dueDate: input.dueDate ?? null,
       iconSrc: input.iconSrc ?? null,
     });
@@ -100,6 +106,7 @@ export const useMissionStore = create<MissionState>((set, get) => ({
       subtitle: updates.subtitle,
       reward: updates.reward,
       frequency: updates.frequency,
+      schedule: updates.schedule,
       dueDate: updates.dueDate ?? null,
       iconSrc: updates.iconSrc ?? null,
     });
